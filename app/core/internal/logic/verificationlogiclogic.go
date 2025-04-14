@@ -9,21 +9,21 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type CoreLogic struct {
+type VerificationLogicLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-func NewCoreLogic(ctx context.Context, svcCtx *svc.ServiceContext) *CoreLogic {
-	return &CoreLogic{
+func NewVerificationLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *VerificationLogicLogic {
+	return &VerificationLogicLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *CoreLogic) Core(req *types.Request) (resp *types.Response, err error) {
+func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationRequest) (resp *types.VerificationResponse, err error) {
 	// todo: add your logic here and delete this line
 
 	return

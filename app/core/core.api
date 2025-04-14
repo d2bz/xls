@@ -1,15 +1,49 @@
+// goctl api go --api core.api --dir .
 syntax = "v1"
 
-type Request {
-	Name string `path:"name,options=you|me"`
-}
+type (
+	Status {
+		StatusCode int    `json:"status_code"`
+		StatusMsg  string `json:"status_msg"`
+	}
+	RegisterRequest {
+		Name             string `json:"name"`
+		Email            string `json:"email"`
+		Password         string `json:"password"`
+		VerificationCode string `json:"verification_code"`
+	}
+	RegisterResponse {
+		Status
+		UserID string `json:"user_id"`
+	}
+	LoginRequest {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	LoginResponse {
+		Status
+		UserID string `json:"user_id"`
+		Token  string `json:"token"`
+	}
+	VerificationRequest {
+		Email string `json:"email"`
+	}
+	VerificationResponse {
+		Status
+	}
+)
 
-type Response {
-	Message string `json:"message"`
-}
-
+@server (
+	prefix: /xls
+)
 service core-api {
-	@handler CoreHandler
-	get /from/:name (Request) returns (Response)
+	@handler RegisterLogic
+	post /register (RegisterRequest) returns (RegisterResponse)
+
+	@handler LoginLogic
+	post /login (LoginRequest) returns (LoginResponse)
+
+	@handler VerificationLogic
+	post /verification (VerificationRequest) returns (VerificationResponse)
 }
 

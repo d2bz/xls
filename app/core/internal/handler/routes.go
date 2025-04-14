@@ -15,10 +15,21 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
-				Method:  http.MethodGet,
-				Path:    "/from/:name",
-				Handler: CoreHandler(serverCtx),
+				Method:  http.MethodPost,
+				Path:    "/login",
+				Handler: LoginLogicHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/register",
+				Handler: RegisterLogicHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/verification",
+				Handler: VerificationLogicHandler(serverCtx),
 			},
 		},
+		rest.WithPrefix("/xls"),
 	)
 }
