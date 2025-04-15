@@ -1,0 +1,9 @@
+package helper
+
+import "regexp"
+
+func CheckEmail(email string) bool {
+	patern := `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	matched, _ := regexp.MatchString(patern, email)
+	return matched
+}

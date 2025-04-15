@@ -2,7 +2,9 @@ package logic
 
 import (
 	"context"
+	"strings"
 
+	"xls/app/core/internal/helper"
 	"xls/app/core/internal/svc"
 	"xls/app/core/internal/types"
 
@@ -24,7 +26,10 @@ func NewVerificationLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationRequest) (resp *types.VerificationResponse, err error) {
-	// todo: add your logic here and delete this line
-
+	req.Email = strings.TrimSpace(req.Email)
+	matched := helper.CheckEmail(req.Email)
+	// if !matched {
+	// 	resp.StatusCode =
+	// }
 	return
 }
