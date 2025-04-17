@@ -3,14 +3,20 @@ syntax = "proto3";
 package user;
 option go_package="./user";
 
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
 message Request {
-  string ping = 1;
+  string email = 1;
+
 }
 
 message Response {
-  string pong = 1;
+  Error error = 1;
 }
 
 service User {
-  rpc Ping(Request) returns(Response);
+  rpc Ping(Request) returns (Response);
 }

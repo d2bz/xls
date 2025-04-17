@@ -8,6 +8,7 @@ import (
 	"xls/app/core/internal/helper"
 	"xls/app/core/internal/svc"
 	"xls/app/core/internal/types"
+	"xls/pkg/send_email"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -32,6 +33,18 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	matched := helper.CheckEmail(req.Email)
 	if !matched {
 		resp.Status = code.EmailFormatErorr
+		return
+	}
+	vcode, err := helper.GenRandomCode(types.CODE_LENGTH)
+	if err != nil {
+		logx.Errorf("generate random code failed: %v", err)
+		resp.Status = code.FAILED
+		return
+	}
+	err = send_email.PostVerificationCode(req.Email, vcode)
+	if err != nil {
+		logx.Errorf("send email failed: %v", err)
+		resp.Status = code.FAILED
 		return
 	}
 	return

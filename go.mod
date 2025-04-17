@@ -3,6 +3,7 @@ module xls
 go 1.24.0
 
 require (
+	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/zeromicro/go-zero v1.8.2
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.36.5

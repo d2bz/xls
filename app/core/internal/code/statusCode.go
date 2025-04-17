@@ -4,6 +4,7 @@ import "xls/app/core/internal/types"
 
 var (
 	SUCCEED          = response(0, "成功")
+	FAILED           = response(1, "失败")
 	EmailFormatErorr = response(10001, "邮箱格式错误")
 )
 
