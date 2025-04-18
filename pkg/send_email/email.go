@@ -2,24 +2,17 @@ package send_email
 
 import (
 	"fmt"
-	"net/smtp"
 
-	"github.com/jordan-wright/email"
+	"gopkg.in/gomail.v2"
 )
 
-func PostVerificationCode(emailAddr string, code string) error {
-	e := email.NewEmail()
-	e.From = fmt.Sprintf("小蓝书 <%s>", EMAIL_FROM)
-	e.To = []string{emailAddr}
-	e.Subject = "注册验证码"
-	e.HTML = []byte(fmt.Sprintf("您的验证码是：<h1>%s</h1>，请在3分钟内完成注册", code))
+func SendEmail(to, code string) error {
+	m := gomail.NewMessage()
+	m.SetAddressHeader("From", EMAIL_FROM, "小蓝书")
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", "注册验证码")
+	m.SetBody("text/html", fmt.Sprintf("您的验证码是：<h1>%s</h1>请在3分钟内完成注册", code))
 
-	smtpHost := "smtp.qq.com:465"
-	anth := smtp.PlainAuth("", EMAIL_FROM, EMAIL_PASS, "smtp.qq.com")
-
-	err := e.Send(smtpHost, anth)
-	if err != nil {
-		return err
-	}
-	return nil
+	d := gomail.NewDialer("smtp.qq.com", 587, EMAIL_FROM, EMAIL_PASS)
+	return d.DialAndSend(m)
 }

@@ -41,7 +41,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 		resp.Status = code.FAILED
 		return
 	}
-	err = send_email.PostVerificationCode(req.Email, vcode)
+	err = send_email.SendEmail(req.Email, vcode)
 	if err != nil {
 		logx.Errorf("send email failed: %v", err)
 		resp.Status = code.FAILED

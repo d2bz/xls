@@ -16,9 +16,9 @@ func TestGenRandomCode(t *testing.T) {
 }
 
 func TestSendEmail(t *testing.T) {
-	to := "3180324210@qq.com"
+	to := "xxxxxxx@qq.com"
 	code := "123456"
-	err := send_email.PostVerificationCode(to, code)
+	err := send_email.SendEmail(to, code)
 	if err != nil {
 		t.Fatal(err)
 	}
