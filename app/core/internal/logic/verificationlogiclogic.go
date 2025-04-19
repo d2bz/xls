@@ -13,6 +13,14 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+const (
+	code_length = 6
+	prefixVC    = "verification#"
+	prefixCD    = "verfication#cd#"
+	expireVC    = 60 * 3 // 验证码过期时间
+	expireCD    = 60 * 1 // 发送验证码间隔
+)
+
 type VerificationLogicLogic struct {
 	logx.Logger
 	ctx    context.Context
@@ -35,7 +43,18 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 		resp.Status = code.EmailFormatErorr
 		return
 	}
-	vcode, err := helper.GenRandomCode(types.CODE_LENGTH)
+
+	cd, err := l.svcCtx.BizRedis.Get(prefixCD + req.Email)
+	if err != nil {
+		logx.Errorf("get verification code cd failed: %v", err)
+		resp.Status = code.FAILED
+		return
+	} else if cd == "1" {
+		resp.Status = code.VerificationCodeIsCoolDown
+		return
+	}
+
+	vcode, err := helper.GenRandomCode(code_length)
 	if err != nil {
 		logx.Errorf("generate random code failed: %v", err)
 		resp.Status = code.FAILED
@@ -47,5 +66,24 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 		resp.Status = code.FAILED
 		return
 	}
+
+	err = l.saveCodeToRedis(req.Email, vcode)
+	if err != nil {
+		logx.Errorf("set verification code cache failed: %v", err)
+		resp.Status = code.FAILED
+		return
+	}
+
+	return
+}
+
+func (l *VerificationLogicLogic) saveCodeToRedis(email, code string) (err error) {
+	vcKey := prefixVC + email
+	err = l.svcCtx.BizRedis.Setex(vcKey, code, expireVC)
+	if err != nil {
+		return
+	}
+	cdKey := prefixCD + email
+	err = l.svcCtx.BizRedis.Setex(cdKey, "1", expireCD)
 	return
 }

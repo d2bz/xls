@@ -7,7 +7,6 @@ type (
 		StatusMsg  string `json:"status_msg"`
 	}
 	RegisterRequest {
-		Name             string `json:"name"`
 		Email            string `json:"email"`
 		Password         string `json:"password"`
 		VerificationCode string `json:"verification_code"`
