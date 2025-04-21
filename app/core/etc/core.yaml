@@ -5,3 +5,9 @@ BizRedis:
   Host: xxxxxx:6379
   Password: xxxxxx
   Typee: node
+UserRedis:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+  NonBlock: true

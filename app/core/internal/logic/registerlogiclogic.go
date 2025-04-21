@@ -8,6 +8,7 @@ import (
 	"xls/app/core/internal/helper"
 	"xls/app/core/internal/svc"
 	"xls/app/core/internal/types"
+	"xls/app/user/userclient"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -32,12 +33,12 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 	req.Email = strings.TrimSpace(req.Email)
 	req.Password = strings.TrimSpace(req.Password)
 	req.VerificationCode = strings.TrimSpace(req.VerificationCode)
-	matched := helper.CheckEmail(req.Email)
+	matched := helper.CheckEmailFormat(req.Email)
 	if !matched {
 		resp.Status = code.EmailFormatErorr
 		return
 	}
-	matched = helper.CheckPassword(req.Password)
+	matched = helper.CheckPasswordFormat(req.Password)
 	if !matched {
 		resp.Status = code.PasswordFormatError
 		return
@@ -55,5 +56,31 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		resp.Status = code.WrongVerificationCode
 		return
 	}
+	if _, err = l.svcCtx.BizRedis.Del(prefixVC + req.Email); err != nil {
+		logx.Errorf("del verification code failed: %v", err)
+		resp.Status = code.FAILED
+		return
+	}
+
+	hashedPwd, err := helper.EncryptPassword(req.Password)
+	if err != nil {
+		logx.Errorf("encrypt password failed: %v", err)
+		resp.Status = code.FAILED
+		return
+	}
+
+	user, err := l.svcCtx.UserRpc.Register(l.ctx, &userclient.RegisterRequest{
+		Email:    req.Email,
+		Password: hashedPwd,
+	})
+	if err != nil {
+		logx.Errorf("register failed: %v", err)
+		resp.Status.StatusCode = int(user.Error.Code)
+		resp.Status.StatusMsg = user.Error.Message
+		return
+	}
+
+	resp.UserID = int(user.Id)
+	resp.Token = ""
 	return
 }

@@ -14,11 +14,12 @@ import (
 )
 
 type (
-	Request  = user.Request
-	Response = user.Response
+	Error            = user.Error
+	RegisterRequest  = user.RegisterRequest
+	RegisterResponse = user.RegisterResponse
 
 	User interface {
-		Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+		Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	}
 
 	defaultUser struct {
@@ -32,7 +33,7 @@ func NewUser(cli zrpc.Client) User {
 	}
 }
 
-func (m *defaultUser) Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+func (m *defaultUser) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
 	client := user.NewUserClient(m.cli.Conn())
-	return client.Ping(ctx, in, opts...)
+	return client.Register(ctx, in, opts...)
 }

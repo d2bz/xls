@@ -10,7 +10,7 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Status
-	UserID string `json:"user_id"`
+	UserID int    `json:"user_id"`
 	Token  string `json:"token"`
 }
 
@@ -22,7 +22,8 @@ type RegisterRequest struct {
 
 type RegisterResponse struct {
 	Status
-	UserID string `json:"user_id"`
+	UserID int    `json:"user_id"`
+	Token  string `json:"token"`
 }
 
 type Status struct {

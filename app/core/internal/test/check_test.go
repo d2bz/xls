@@ -3,6 +3,7 @@ package test
 import (
 	"regexp"
 	"testing"
+	"xls/app/core/internal/helper"
 )
 
 func TestCheckEmail(t *testing.T) {
@@ -13,4 +14,16 @@ func TestCheckEmail(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(matched)
+}
+
+func TestCheckPassword(t *testing.T) {
+	password := "123456"
+	hashedPwd, err := helper.EncryptPassword(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	matched := helper.CheckPassword(password, hashedPwd)
+	if !matched {
+		t.Fatal("password unmatched")
+	}
 }
