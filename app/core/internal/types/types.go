@@ -10,8 +10,8 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	Status
-	UserID int    `json:"user_id"`
-	Token  string `json:"token"`
+	Token
+	UserID int `json:"user_id"`
 }
 
 type RegisterRequest struct {
@@ -22,13 +22,18 @@ type RegisterRequest struct {
 
 type RegisterResponse struct {
 	Status
-	UserID int    `json:"user_id"`
-	Token  string `json:"token"`
+	Token
+	UserID int `json:"user_id"`
 }
 
 type Status struct {
 	StatusCode int    `json:"status_code"`
 	StatusMsg  string `json:"status_msg"`
+}
+
+type Token struct {
+	AccessToken string `json:"access_tokeb"`
+	ExpireAt    int64  `json:"expire_at"`
 }
 
 type VerificationRequest struct {

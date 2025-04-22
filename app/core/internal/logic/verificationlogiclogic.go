@@ -38,12 +38,15 @@ func NewVerificationLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationRequest) (resp *types.VerificationResponse, err error) {
 	resp = new(types.VerificationResponse)
 	req.Email = strings.TrimSpace(req.Email)
+
+	// 验证输入格式
 	matched := helper.CheckEmailFormat(req.Email)
 	if !matched {
 		resp.Status = code.EmailFormatErorr
 		return
 	}
 
+	// 检查验证码冷却时间
 	cd, err := l.svcCtx.BizRedis.Get(prefixCD + req.Email)
 	if err != nil {
 		logx.Errorf("get verification code cd failed: %v", err)
@@ -54,12 +57,15 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 		return
 	}
 
+	// 生成验证码
 	vcode, err := helper.GenRandomCode(code_length)
 	if err != nil {
 		logx.Errorf("generate random code failed: %v", err)
 		resp.Status = code.FAILED
 		return
 	}
+
+	// 发送验证码
 	err = send_email.SendEmail(req.Email, vcode)
 	if err != nil {
 		logx.Errorf("send email failed: %v", err)
@@ -67,13 +73,13 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 		return
 	}
 
+	// 缓存验证码
 	err = l.saveCodeToRedis(req.Email, vcode)
 	if err != nil {
 		logx.Errorf("set verification code cache failed: %v", err)
 		resp.Status = code.FAILED
 		return
 	}
-
 	return
 }
 

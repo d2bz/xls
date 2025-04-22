@@ -6,6 +6,10 @@ type (
 		StatusCode int    `json:"status_code"`
 		StatusMsg  string `json:"status_msg"`
 	}
+	Token {
+		AccessToken string `json:"access_tokeb"`
+		ExpireAt    int64  `json:"expire_at"`
+	}
 	RegisterRequest {
 		Email            string `json:"email"`
 		Password         string `json:"password"`
@@ -13,8 +17,8 @@ type (
 	}
 	RegisterResponse {
 		Status
-		UserID int    `json:"user_id"`
-		Token  string `json:"token"`
+		Token
+		UserID int `json:"user_id"`
 	}
 	LoginRequest {
 		Email    string `json:"email"`
@@ -22,8 +26,8 @@ type (
 	}
 	LoginResponse {
 		Status
-		UserID int    `json:"user_id"`
-		Token  string `json:"token"`
+		Token
+		UserID int `json:"user_id"`
 	}
 	VerificationRequest {
 		Email string `json:"email"`

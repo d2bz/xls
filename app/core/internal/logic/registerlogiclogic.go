@@ -33,6 +33,8 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 	req.Email = strings.TrimSpace(req.Email)
 	req.Password = strings.TrimSpace(req.Password)
 	req.VerificationCode = strings.TrimSpace(req.VerificationCode)
+
+	// 验证输入格式
 	matched := helper.CheckEmailFormat(req.Email)
 	if !matched {
 		resp.Status = code.EmailFormatErorr
@@ -44,6 +46,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return
 	}
 
+	// 检查验证码
 	rdbCode, err := l.svcCtx.BizRedis.Get(prefixVC + req.Email)
 	if err == redis.Nil {
 		resp.Status = code.VerificationCodeIsEmpty
@@ -62,6 +65,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return
 	}
 
+	// 密码加密
 	hashedPwd, err := helper.EncryptPassword(req.Password)
 	if err != nil {
 		logx.Errorf("encrypt password failed: %v", err)
@@ -69,6 +73,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return
 	}
 
+	// 调用用户服务注册
 	user, err := l.svcCtx.UserRpc.Register(l.ctx, &userclient.RegisterRequest{
 		Email:    req.Email,
 		Password: hashedPwd,
@@ -80,7 +85,25 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return
 	}
 
-	resp.UserID = int(user.Id)
-	resp.Token = ""
-	return
+	// 生成token
+	token, err := helper.BuildToken(&helper.TokenOptions{
+		AccessSecret: l.svcCtx.Config.Auth.AccessSecret,
+		AccessExpire: l.svcCtx.Config.Auth.AccessExpire,
+		UserID:       int(user.Id),
+	})
+	if err != nil {
+		logx.Errorf("build token failed: %v", err)
+		resp.Status = code.FAILED
+		return
+	}
+
+	resp = &types.RegisterResponse{
+		Status: code.SUCCEED,
+		Token: types.Token{
+			AccessToken: token.AccessToken,
+			ExpireAt:    token.ExpireAt,
+		},
+		UserID: int(user.Id),
+	}
+	return resp, nil
 }
