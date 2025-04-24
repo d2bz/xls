@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"xls/app/user/internal/code"
+	"xls/app/user/internal/model"
 	"xls/app/user/internal/svc"
 	"xls/app/user/user"
 
@@ -27,6 +28,14 @@ func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Register
 func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.RegisterResponse, err error) {
 	userResp = new(user.RegisterResponse)
 	// 检查用户是否存在
-	userResp.Error = code.UserIsExist
+	db := l.svcCtx.MysqlDB
+	user, err := model.GetUserByEmail(db, in.Email)
+	if user != nil {
+		userResp.Error = code.UserAlreadyExists
+		return
+	} else if err != nil {
+		logx.Errorf("")
+	}
+
 	return
 }

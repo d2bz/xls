@@ -15,7 +15,7 @@ func (*User) TableName() string {
 	return "user"
 }
 
-func (u *User) GetByEmail(db *gorm.DB, email string) (*User, error) {
+func GetUserByEmail(db *gorm.DB, email string) (*User, error) {
 	var user User
 	if err := db.Where("email = ?", email).First(&user).Error; err != nil {
 		return nil, err
