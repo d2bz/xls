@@ -14,6 +14,11 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
+const (
+	prefixPsw = "password#"
+	expirePsw = 60 * 5 // 密码过期时间
+)
+
 type RegisterLogicLogic struct {
 	logx.Logger
 	ctx    context.Context
@@ -38,31 +43,29 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 	matched := helper.CheckEmailFormat(req.Email)
 	if !matched {
 		resp.Status = code.EmailFormatErorr
-		return
+		return resp, nil
 	}
 	matched = helper.CheckPasswordFormat(req.Password)
 	if !matched {
 		resp.Status = code.PasswordFormatError
-		return
+		return resp, nil
 	}
 
 	// 检查验证码
 	rdbCode, err := l.svcCtx.BizRedis.Get(prefixVC + req.Email)
 	if err == redis.Nil {
 		resp.Status = code.VerificationCodeIsEmpty
-		return
+		return resp, nil
 	} else if err != nil {
 		logx.Errorf("get verification code cd failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	} else if rdbCode != req.VerificationCode {
 		resp.Status = code.WrongVerificationCode
-		return
+		return resp, nil
 	}
 	if _, err = l.svcCtx.BizRedis.Del(prefixVC + req.Email); err != nil {
 		logx.Errorf("del verification code failed: %v", err)
-		resp.Status = code.FAILED
-		return
 	}
 
 	// 密码加密
@@ -70,7 +73,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 	if err != nil {
 		logx.Errorf("encrypt password failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	}
 
 	// 调用用户服务注册
@@ -82,7 +85,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		logx.Errorf("register failed: %v", err)
 		resp.Status.StatusCode = int(user.Error.Code)
 		resp.Status.StatusMsg = user.Error.Message
-		return
+		return resp, nil
 	}
 
 	// 生成token
@@ -94,7 +97,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 	if err != nil {
 		logx.Errorf("build token failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	}
 
 	resp = &types.RegisterResponse{
@@ -105,5 +108,11 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		},
 		UserID: int(user.Id),
 	}
+
+	// 用户密码存入redis
+	if err = l.svcCtx.BizRedis.Setex(prefixPsw+req.Email, hashedPwd, expirePsw); err != nil {
+		logx.Errorf("set password cache failed: %v", err)
+	}
+
 	return resp, nil
 }

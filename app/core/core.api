@@ -39,6 +39,7 @@ type (
 
 @server (
 	prefix: /xls
+	jwt: -
 )
 service core-api {
 	@handler RegisterLogic
@@ -50,4 +51,3 @@ service core-api {
 	@handler VerificationLogic
 	post /verification (VerificationRequest) returns (VerificationResponse)
 }
-

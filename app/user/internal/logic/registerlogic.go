@@ -34,8 +34,20 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 		userResp.Error = code.UserAlreadyExists
 		return
 	} else if err != nil {
-		logx.Errorf("")
+		logx.Errorf("Get user by email failed: %v", err)
+		return
 	}
 
+	// 注册用户
+	user = &model.User{
+		Email:    in.Email,
+		Name:     "user-" + in.Email,
+		Password: in.Password,
+	}
+	if err = user.Insert(db); err != nil {
+		logx.Errorf("Insert user failed: %v", err)
+		userResp.Error = code.FAILED
+		return
+	}
 	return
 }

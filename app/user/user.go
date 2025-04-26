@@ -34,6 +34,9 @@ func main() {
 	})
 	defer s.Stop()
 
+	fmt.Println("Loaded etcd hosts:", c.Etcd.Hosts)
+
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()
+	// sudo bash -c 'echo -e "nameserver 8.8.8.8\nnameserver 114.114.114.114" > /etc/resolv.conf'
 }

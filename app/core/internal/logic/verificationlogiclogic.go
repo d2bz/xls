@@ -43,7 +43,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	matched := helper.CheckEmailFormat(req.Email)
 	if !matched {
 		resp.Status = code.EmailFormatErorr
-		return
+		return resp, nil
 	}
 
 	// 检查验证码冷却时间
@@ -51,10 +51,10 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	if err != nil {
 		logx.Errorf("get verification code cd failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	} else if cd == "1" {
 		resp.Status = code.VerificationCodeIsCoolDown
-		return
+		return resp, nil
 	}
 
 	// 生成验证码
@@ -62,7 +62,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	if err != nil {
 		logx.Errorf("generate random code failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	}
 
 	// 发送验证码
@@ -70,7 +70,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	if err != nil {
 		logx.Errorf("send email failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	}
 
 	// 缓存验证码
@@ -78,7 +78,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	if err != nil {
 		logx.Errorf("set verification code cache failed: %v", err)
 		resp.Status = code.FAILED
-		return
+		return resp, nil
 	}
 	return
 }

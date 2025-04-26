@@ -9,7 +9,7 @@ import (
 type Config struct {
 	rest.RestConf
 	BizRedis redis.RedisConf
-	UserRpc  zrpc.RpcClientConf
+	UserRPC  zrpc.RpcClientConf
 	Auth     struct {
 		AccessSecret string
 		AccessExpire int64
