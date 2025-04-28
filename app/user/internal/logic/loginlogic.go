@@ -23,8 +23,8 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 	}
 }
 
-func (l *LoginLogic) Login(in *user.LoginRequest) (*user.LoginResponse, error) {
-	// todo: add your logic here and delete this line
+func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err error) {
+	resp = new(user.LoginResponse)
 
 	return &user.LoginResponse{}, nil
 }

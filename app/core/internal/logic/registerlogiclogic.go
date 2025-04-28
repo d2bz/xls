@@ -88,17 +88,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return resp, nil
 	}
 
-	// 生成token
-	token, err := helper.BuildToken(&helper.TokenOptions{
-		AccessSecret: l.svcCtx.Config.Auth.AccessSecret,
-		AccessExpire: l.svcCtx.Config.Auth.AccessExpire,
-		UserID:       int(user.Id),
-	})
-	if err != nil {
-		logx.Errorf("build token failed: %v", err)
-		resp.Status = code.FAILED
-		return resp, nil
-	}
+	
 
 	resp = &types.RegisterResponse{
 		Status: code.SUCCEED,

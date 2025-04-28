@@ -17,6 +17,7 @@ message RegisterRequest {
 message RegisterResponse {
   Error error = 1;
   int64 id = 2;
+  string token = 3;
 }
 
 message LoginRequest {
@@ -27,6 +28,7 @@ message LoginRequest {
 message LoginResponse {
   Error error = 1;
   int64 id = 2;
+  string token = 3;
 }
 
 
