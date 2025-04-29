@@ -12,6 +12,11 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+const (
+	prefixUser = "user#"
+	expireUser = 60 * 5 // 密码过期时间
+)
+
 type RegisterLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
@@ -63,8 +68,24 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 		return
 	}
 
+	// user信息存入redis
+	userStr, err := u.ToString()
+	if err == nil {
+		err = l.svcCtx.BizRedis.Setex(prefixUser+in.Email, userStr, expireUser)
+		if err != nil {
+			logx.Errorf("set user cache failed: %v", err)
+		}
+	} else {
+		logx.Errorf("failed to convert user to string: %v", err)
+	}
+
 	userResp = &user.RegisterResponse{
-		Token: token.AccessToken,
+		Error: code.SUCCEED,
+		Token: &user.Token{
+			AccessToken: token.AccessToken,
+			ExpireAt:    token.ExpireAt,
+		},
+		Id: u.ID,
 	}
 	return
 }

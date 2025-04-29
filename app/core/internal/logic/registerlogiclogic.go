@@ -14,11 +14,6 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
-const (
-	prefixPsw = "password#"
-	expirePsw = 60 * 5 // 密码过期时间
-)
-
 type RegisterLogicLogic struct {
 	logx.Logger
 	ctx    context.Context
@@ -88,20 +83,13 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return resp, nil
 	}
 
-	
-
 	resp = &types.RegisterResponse{
 		Status: code.SUCCEED,
 		Token: types.Token{
-			AccessToken: token.AccessToken,
-			ExpireAt:    token.ExpireAt,
+			AccessToken: user.Token.AccessToken,
+			ExpireAt:    user.Token.ExpireAt,
 		},
 		UserID: int(user.Id),
-	}
-
-	// 用户密码存入redis
-	if err = l.svcCtx.BizRedis.Setex(prefixPsw+req.Email, hashedPwd, expirePsw); err != nil {
-		logx.Errorf("set password cache failed: %v", err)
 	}
 
 	return resp, nil

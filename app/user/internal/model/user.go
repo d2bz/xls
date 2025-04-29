@@ -1,6 +1,10 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"encoding/json"
+
+	"gorm.io/gorm"
+)
 
 type User struct {
 	gorm.Model
@@ -13,6 +17,15 @@ type User struct {
 
 func (*User) TableName() string {
 	return "user"
+}
+
+func (u *User) ToString() (string, error) {
+	userStr, err := json.Marshal(u)
+	return string(userStr), err
+}
+
+func (u *User) FromString(userStr string) error {
+	return json.Unmarshal([]byte(userStr), u)
 }
 
 func GetUserByEmail(db *gorm.DB, email string) (*User, error) {

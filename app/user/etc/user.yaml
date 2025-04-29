@@ -6,3 +6,10 @@ Etcd:
   Key: user.rpc
 mysql:
   datasource: root:password@tcp(localhost:3306)/user?charset=utf8&parseTime=True&loc=Local
+BizRedis:
+  Host: xxxxxx:6379
+  Pass: xxxxxx
+  Type: node
+Auth:
+  AccessSecret: xxxxxxxxxx
+  AccessExpire: 2592000

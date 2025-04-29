@@ -64,24 +64,12 @@ func (l *LoginLogicLogic) LoginLogic(req *types.LoginRequest) (resp *types.Login
 		return resp, nil
 	}
 
-	// 生成Token
-	token, err := helper.BuildToken(&helper.TokenOptions{
-		AccessSecret: l.svcCtx.Config.Auth.AccessSecret,
-		AccessExpire: l.svcCtx.Config.Auth.AccessExpire,
-		UserID:       int(user.Id),
-	})
-	if err != nil {
-		logx.Errorf("build token failed: %v", err)
-		resp.Status = code.FAILED
-		return resp, nil
-	}
-
 	resp = &types.LoginResponse{
 		Status: code.SUCCEED,
 		UserID: int(user.Id),
 		Token: types.Token{
-			AccessToken: token.AccessToken,
-			ExpireAt:    token.ExpireAt,
+			AccessToken: user.Token.AccessToken,
+			ExpireAt:    user.Token.ExpireAt,
 		},
 	}
 	return resp, nil

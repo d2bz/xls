@@ -19,6 +19,7 @@ type (
 	LoginResponse    = user.LoginResponse
 	RegisterRequest  = user.RegisterRequest
 	RegisterResponse = user.RegisterResponse
+	Token            = user.Token
 
 	User interface {
 		Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
