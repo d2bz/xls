@@ -68,6 +68,6 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 			AccessToken: token.AccessToken,
 			ExpireAt:    token.ExpireAt,
 		},
-		Id: u.ID,
+		Id: int64(u.ID),
 	}, nil
 }

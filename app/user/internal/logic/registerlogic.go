@@ -85,7 +85,7 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 			AccessToken: token.AccessToken,
 			ExpireAt:    token.ExpireAt,
 		},
-		Id: u.ID,
+		Id: int64(u.ID),
 	}
 	return
 }
