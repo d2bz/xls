@@ -11,3 +11,6 @@ UserRPC:
       - 127.0.0.1:2379
     Key: user.rpc
   NonBlock: true
+Auth:
+  AccessSecret: xxxxxxxxxx
+  AccessExpire: 2592000

@@ -7,7 +7,7 @@ type (
 		StatusMsg  string `json:"status_msg"`
 	}
 	Token {
-		AccessToken string `json:"access_tokeb"`
+		AccessToken string `json:"access_token"`
 		ExpireAt    int64  `json:"expire_at"`
 	}
 	RegisterRequest {
@@ -39,7 +39,6 @@ type (
 
 @server (
 	prefix: /xls
-	jwt: -
 )
 service core-api {
 	@handler RegisterLogic
@@ -51,3 +50,21 @@ service core-api {
 	@handler VerificationLogic
 	post /verification (VerificationRequest) returns (VerificationResponse)
 }
+
+type (
+	UploadVideoRequest  {}
+	UploadVideoResponse {
+		Status
+		Url string `json:"url"`
+	}
+)
+
+@server (
+	prefix: /xls/video
+	jwt:    Auth
+)
+service core-api {
+	@handler UploadVideo
+	post /upload (UploadVideoRequest) returns (UploadVideoResponse)
+}
+

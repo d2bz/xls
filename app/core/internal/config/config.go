@@ -10,4 +10,10 @@ type Config struct {
 	rest.RestConf
 	BizRedis redis.RedisConf
 	UserRPC  zrpc.RpcClientConf
+	Auth Auth
+}
+
+type Auth struct {
+	AccessSecret string
+	AccessExpire int64
 }

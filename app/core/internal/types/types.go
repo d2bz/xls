@@ -32,8 +32,16 @@ type Status struct {
 }
 
 type Token struct {
-	AccessToken string `json:"access_tokeb"`
+	AccessToken string `json:"access_token"`
 	ExpireAt    int64  `json:"expire_at"`
+}
+
+type UploadVideoRequest struct {
+}
+
+type UploadVideoResponse struct {
+	Status
+	Url string `json:"url"`
 }
 
 type VerificationRequest struct {
