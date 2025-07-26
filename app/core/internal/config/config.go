@@ -10,10 +10,20 @@ type Config struct {
 	rest.RestConf
 	BizRedis redis.RedisConf
 	UserRPC  zrpc.RpcClientConf
-	Auth Auth
+	Auth     AuthConf
+	Minio    MinioConf
 }
 
-type Auth struct {
+type AuthConf struct {
 	AccessSecret string
 	AccessExpire int64
+}
+
+type MinioConf struct {
+	Endpoint  string
+	AccessKey string
+	SecretKey string
+	Bucket    string
+	UseSSL    bool
+	BaseUrl   string
 }
