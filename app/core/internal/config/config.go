@@ -10,6 +10,7 @@ type Config struct {
 	rest.RestConf
 	BizRedis redis.RedisConf
 	UserRPC  zrpc.RpcClientConf
+	VideoRPC zrpc.RpcClientConf
 	Auth     AuthConf
 	Minio    MinioConf
 }

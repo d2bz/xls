@@ -3,6 +3,11 @@ syntax = "proto3";
 package video;
 option go_package="./video";
 
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
 message Request {
   string ping = 1;
 }

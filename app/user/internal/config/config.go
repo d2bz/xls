@@ -7,16 +7,16 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	Mysql    Mysql
+	Mysql    MysqlConf
 	BizRedis redis.RedisConf
-	Auth     Auth
+	Auth     AuthConf
 }
 
-type Mysql struct {
+type MysqlConf struct {
 	Datasource string
 }
 
-type Auth struct {
+type AuthConf struct {
 	AccessSecret string
 	AccessExpire int64
 }
