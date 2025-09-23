@@ -52,7 +52,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		resp.Status = code.VerificationCodeIsEmpty
 		return resp, nil
 	} else if err != nil {
-		logx.Errorf("get verification code cd failed: %v", err)
+		l.Logger.Errorf("get verification code cd failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	} else if rdbCode != req.VerificationCode {
@@ -60,13 +60,13 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		return resp, nil
 	}
 	if _, err = l.svcCtx.BizRedis.Del(prefixVC + req.Email); err != nil {
-		logx.Errorf("del verification code failed: %v", err)
+		l.Logger.Errorf("del verification code failed: %v", err)
 	}
 
 	// 密码加密
 	hashedPwd, err := helper.EncryptPassword(req.Password)
 	if err != nil {
-		logx.Errorf("encrypt password failed: %v", err)
+		l.Logger.Errorf("encrypt password failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	}
@@ -77,7 +77,10 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 		Password: hashedPwd,
 	})
 	if err != nil {
-		logx.Errorf("register failed: %v", err)
+		l.Logger.Errorf("register rpc failed: %v", err)
+		return resp, nil
+	}
+	if user.Error.Code != 0 {
 		resp.Status.StatusCode = int(user.Error.Code)
 		resp.Status.StatusMsg = user.Error.Message
 		return resp, nil

@@ -40,7 +40,7 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 		userResp.Error = code.UserAlreadyExists
 		return
 	} else if err != nil {
-		logx.Errorf("Get user by email failed: %v", err)
+		l.Logger.Errorf("Get user by email failed: %v", err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 		Password: in.Password,
 	}
 	if err = u.Insert(db); err != nil {
-		logx.Errorf("Insert user failed: %v", err)
+		l.Logger.Errorf("Insert user failed: %v", err)
 		userResp.Error = code.FAILED
 		return
 	}
@@ -63,7 +63,7 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 		UserID:       int(u.ID),
 	})
 	if err != nil {
-		logx.Errorf("build token failed: %v", err)
+		l.Logger.Errorf("build token failed: %v", err)
 		userResp.Error = code.FAILED
 		return
 	}
@@ -73,10 +73,10 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 	if err == nil {
 		err = l.svcCtx.BizRedis.Setex(prefixUser+in.Email, userStr, expireUser)
 		if err != nil {
-			logx.Errorf("set user cache failed: %v", err)
+			l.Logger.Errorf("set user cache failed: %v", err)
 		}
 	} else {
-		logx.Errorf("failed to convert user to string: %v", err)
+		l.Logger.Errorf("failed to convert user to string: %v", err)
 	}
 
 	userResp = &user.RegisterResponse{

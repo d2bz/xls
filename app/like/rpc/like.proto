@@ -1,0 +1,24 @@
+// goctl rpc protoc like.proto --go_out=. --go-grpc_out=. --zrpc_out=.
+syntax = "proto3";
+
+package like;
+option go_package="./like";
+
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
+message LikeRequest {
+  uint64 UserID = 1;
+  uint64 TargetID = 2;
+  int32 TargetType = 3;
+}
+
+message LikeResponse {
+  Error error = 1;
+}
+
+service Like {
+  rpc Like(LikeRequest) returns(LikeResponse);
+}

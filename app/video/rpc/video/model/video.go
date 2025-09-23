@@ -6,7 +6,7 @@ type Video struct {
 	Uid        uint   `gorm:"not null" json:"uid"`
 	Title      string `gorm:"varchar(255);not null" json:"title"`
 	Url        string `gorm:"varchar(255); not null" json:"url"`
-	Liked      int    `json:"liked"`
+	LikeNum    int    `json:"like_num"`
 	CommentNum int    `json:"comment_num"`
 	gorm.Model
 }

@@ -33,10 +33,10 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 	var u *model.User
 	userStr, err := l.svcCtx.BizRedis.Get(prefixUser + in.Email)
 	if err != nil {
-		logx.Errorf("get user cache failed: %v", err)
+		l.Logger.Errorf("get user cache failed: %v", err)
 	}
 	if err = u.FromString(userStr); err != nil {
-		logx.Errorf("failed to convert string to user: %v", err)
+		l.Logger.Errorf("failed to convert string to user: %v", err)
 	} else {
 		// redis不存在则查询数据库
 		db := l.svcCtx.MysqlDB
@@ -57,7 +57,7 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 		UserID:       int(u.ID),
 	})
 	if err != nil {
-		logx.Errorf("build token failed: %v", err)
+		l.Logger.Errorf("build token failed: %v", err)
 		resp.Error = code.FAILED
 		return
 	}

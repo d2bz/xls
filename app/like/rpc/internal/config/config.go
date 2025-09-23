@@ -1,0 +1,18 @@
+package config
+
+import (
+	"github.com/zeromicro/go-zero/core/stores/redis"
+	"github.com/zeromicro/go-zero/zrpc"
+)
+
+type Config struct {
+	zrpc.RpcServerConf
+	Mysql struct {
+		Datasource string
+	}
+	BizRedis redis.RedisConf
+	KqPusherConf struct {
+		Brokers []string
+		Topic   string
+	}
+}

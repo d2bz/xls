@@ -47,7 +47,7 @@ func (l *LoginLogicLogic) LoginLogic(req *types.LoginRequest) (resp *types.Login
 	// 密码加密
 	hashedPwd, err := helper.EncryptPassword(req.Password)
 	if err != nil {
-		logx.Errorf("encrypt password failed: %v", err)
+		l.Logger.Errorf("encrypt password failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	}
@@ -58,7 +58,10 @@ func (l *LoginLogicLogic) LoginLogic(req *types.LoginRequest) (resp *types.Login
 		Password: hashedPwd,
 	})
 	if err != nil {
-		logx.Errorf("user login failed: %v", err)
+		l.Logger.Errorf("login rpc failed: %v", err)
+		return resp, nil
+	}
+	if user.Error.Code != 0 {
 		resp.Status.StatusCode = int(user.Error.Code)
 		resp.Status.StatusMsg = user.Error.Message
 		return resp, nil

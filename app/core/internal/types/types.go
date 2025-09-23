@@ -14,6 +14,16 @@ type LoginResponse struct {
 	UserID int `json:"user_id"`
 }
 
+type PublishVideoRequest struct {
+	Url   string `json:"url"`
+	Title string `json:"title"`
+}
+
+type PublishVideoResponse struct {
+	Status
+	VideoID int `json:"video_id"`
+}
+
 type RegisterRequest struct {
 	Email            string `json:"email"`
 	Password         string `json:"password"`

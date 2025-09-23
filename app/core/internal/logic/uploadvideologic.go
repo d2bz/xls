@@ -43,7 +43,7 @@ func (l *UploadVideoLogic) UploadVideo(file *multipart.File, header *multipart.F
 	)
 	if err != nil {
 		resp.Status = code.FAILED
-		logx.Errorf("create miniocli error: %v", err)
+		l.Logger.Errorf("create miniocli error: %v", err)
 		return
 	}
 	objectName := time.Now().Format("20060102_150405") + filepath.Ext(header.Filename)
@@ -51,14 +51,12 @@ func (l *UploadVideoLogic) UploadVideo(file *multipart.File, header *multipart.F
 	_, err = minioCli.PutObject(context.Background(), l.svcCtx.Config.Minio.Bucket, objectName, *file, header.Size, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		resp.Status = code.FAILED
-		logx.Errorf("upload file to bucket error: %v", err)
+		l.Logger.Errorf("upload file to bucket error: %v", err)
 		return
 	}
 
 	// 构建文件的 URL
 	fileURL := fmt.Sprintf("http://%s/%s/%s", l.svcCtx.Config.Minio.Endpoint, l.svcCtx.Config.Minio.Bucket, objectName)
-
-	// Todo: rpc处理url
 
 	resp = &types.UploadVideoResponse{
 		Url: fileURL,

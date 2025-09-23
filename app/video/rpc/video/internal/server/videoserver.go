@@ -23,7 +23,7 @@ func NewVideoServer(svcCtx *svc.ServiceContext) *VideoServer {
 	}
 }
 
-func (s *VideoServer) Ping(ctx context.Context, in *video.Request) (*video.Response, error) {
-	l := logic.NewPingLogic(ctx, s.svcCtx)
-	return l.Ping(in)
+func (s *VideoServer) Publish(ctx context.Context, in *video.PublishRequest) (*video.PublishResponse, error) {
+	l := logic.NewPublishLogic(ctx, s.svcCtx)
+	return l.Publish(in)
 }

@@ -9,14 +9,8 @@ type Config struct {
 	zrpc.RpcServerConf
 	Mysql    MysqlConf
 	BizRedis redis.RedisConf
-	Auth     AuthConf
 }
 
 type MysqlConf struct {
 	Datasource string
-}
-
-type AuthConf struct {
-	AccessSecret string
-	AccessExpire int64
 }

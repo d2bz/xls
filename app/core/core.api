@@ -57,6 +57,14 @@ type (
 		Status
 		Url string `json:"url"`
 	}
+	PublishVideoRequest {
+		Url   string `json:"url"`
+		Title string `json:"title"`
+	}
+	PublishVideoResponse {
+		Status
+		VideoID int `json:"video_id"`
+	}
 )
 
 @server (
@@ -66,5 +74,8 @@ type (
 service core-api {
 	@handler UploadVideo
 	post /upload (UploadVideoRequest) returns (UploadVideoResponse)
+
+	@handler PublishVideo
+	post /publishVideo (PublishVideoRequest) returns (PublishVideoResponse)
 }
 

@@ -10,6 +10,7 @@ var (
 	WrongVerificationCode      = response(10003, "验证码错误")
 	VerificationCodeIsEmpty    = response(10004, "验证码为空")
 	PasswordFormatError        = response(10005, "密码格式错误")
+	NoLogin                    = response(10006, "未登录")
 )
 
 func response(code int, msg string) types.Status {

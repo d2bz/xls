@@ -14,11 +14,12 @@ import (
 )
 
 type (
-	Request  = video.Request
-	Response = video.Response
+	Error           = video.Error
+	PublishRequest  = video.PublishRequest
+	PublishResponse = video.PublishResponse
 
 	Video interface {
-		Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error)
+		Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
 	}
 
 	defaultVideo struct {
@@ -32,7 +33,7 @@ func NewVideo(cli zrpc.Client) Video {
 	}
 }
 
-func (m *defaultVideo) Ping(ctx context.Context, in *Request, opts ...grpc.CallOption) (*Response, error) {
+func (m *defaultVideo) Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error) {
 	client := video.NewVideoClient(m.cli.Conn())
-	return client.Ping(ctx, in, opts...)
+	return client.Publish(ctx, in, opts...)
 }

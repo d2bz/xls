@@ -1,0 +1,10 @@
+Name: mq
+KqConsumerConf:
+  Name: like-kq-consumer
+  Brokers:
+    - xxxxxxxxx.9092
+  Group: like
+  Topic: topic-like
+  Offset: last
+  Consumers: 1
+  Processors: 1

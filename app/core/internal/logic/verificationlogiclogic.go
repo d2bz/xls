@@ -49,7 +49,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	// 检查验证码冷却时间
 	cd, err := l.svcCtx.BizRedis.Get(prefixCD + req.Email)
 	if err != nil {
-		logx.Errorf("get verification code cd failed: %v", err)
+		l.Logger.Errorf("get verification code cd failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	} else if cd == "1" {
@@ -60,7 +60,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	// 生成验证码
 	vcode, err := helper.GenRandomCode(code_length)
 	if err != nil {
-		logx.Errorf("generate random code failed: %v", err)
+		l.Logger.Errorf("generate random code failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	}
@@ -68,7 +68,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	// 发送验证码
 	err = send_email.SendEmail(req.Email, vcode)
 	if err != nil {
-		logx.Errorf("send email failed: %v", err)
+		l.Logger.Errorf("send email failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	}
@@ -76,7 +76,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	// 缓存验证码
 	err = l.saveCodeToRedis(req.Email, vcode)
 	if err != nil {
-		logx.Errorf("set verification code cache failed: %v", err)
+		l.Logger.Errorf("set verification code cache failed: %v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	}
