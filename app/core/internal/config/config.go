@@ -11,6 +11,7 @@ type Config struct {
 	BizRedis redis.RedisConf
 	UserRPC  zrpc.RpcClientConf
 	VideoRPC zrpc.RpcClientConf
+	LikeRPC  zrpc.RpcClientConf
 	Auth     AuthConf
 	Minio    MinioConf
 }

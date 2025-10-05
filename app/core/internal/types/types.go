@@ -3,6 +3,15 @@
 
 package types
 
+type LikeRequest struct {
+	TargetID   uint64 `json:"target_id"`
+	TargetType int32  `json:"target_type"`
+}
+
+type LikeResponse struct {
+	Status
+}
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`

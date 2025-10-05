@@ -11,13 +11,25 @@ UserRPC:
       - 127.0.0.1:2379
     Key: user.rpc
   NonBlock: true
+VideoRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+  NonBlock: false
+LikeRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: like.rpc
+  NonBlock: false
 Auth:
   AccessSecret: xxxxxxxxxx
   AccessExpire: 2592000
 Minio:
-  Endpoint: "127.0.0.1:9000"
-  AccessKey: "minioadmin"
-  SecretKey: "minioadmin"
-  Bucket: "mybucket"
+  Endpoint: 127.0.0.1:9000
+  AccessKey: minioadmin
+  SecretKey: minioadmin
+  Bucket: mybucket
   UseSSL: false
-  BaseUrl: "http://127.0.0.1:9000"
+  BaseUrl: http://127.0.0.1:9000

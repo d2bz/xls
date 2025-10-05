@@ -2,6 +2,7 @@ package svc
 
 import (
 	"xls/app/core/internal/config"
+	"xls/app/like/rpc/likeclient"
 	"xls/app/user/userclient"
 	"xls/app/video/rpc/video/videoclient"
 
@@ -14,13 +15,15 @@ type ServiceContext struct {
 	BizRedis *redis.Redis
 	UserRpc  userclient.User
 	VideoRpc videoclient.Video
+	LikeRpc  likeclient.Like
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:   c,
-		BizRedis: redis.New(c.BizRedis.Host, redis.WithPass(c.BizRedis.Pass)),
+		BizRedis: redis.MustNewRedis(c.BizRedis),
 		UserRpc:  userclient.NewUser(zrpc.MustNewClient(c.UserRPC)),
 		VideoRpc: videoclient.NewVideo(zrpc.MustNewClient(c.VideoRPC)),
+		LikeRpc:  likeclient.NewLike(zrpc.MustNewClient(c.LikeRPC)),
 	}
 }

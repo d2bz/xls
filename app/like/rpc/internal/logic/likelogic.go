@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"xls/app/like/rpc/internal/svc"
 	"xls/app/like/rpc/internal/types"
@@ -44,7 +45,8 @@ func (l *LikeLogic) Like(in *like.LikeRequest) (*like.LikeResponse, error) {
 			l.Logger.Errorf("[like] marshal msg: %v error: %v", msg, err)
 			return
 		}
-		err = l.svcCtx.KqPusherClient.Push(context.Background(), string(data))
+		key := fmt.Sprintf("%d-%d", msg.TargetType, msg.TargetID)
+		err = l.svcCtx.KqPusherClient.PushWithKey(context.Background(), key, string(data))
 		if err != nil {
 			l.Logger.Errorf("[like] kq push data: %v error: %v", data, err)
 		}
