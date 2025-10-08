@@ -7,7 +7,11 @@ import (
 
 type Config struct {
 	KqConsumerConf kq.KqConf
-	Mysql          struct {
+	KqPusherConf   struct {
+		Brokers []string
+		Topic   string
+	}
+	Mysql struct {
 		Datasource string
 	}
 	BizRedis redis.RedisConf

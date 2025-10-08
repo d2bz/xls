@@ -8,3 +8,15 @@ type Like struct {
 	TargetType int32  `gorm:"not null" json:"target_type"`
 	gorm.Model
 }
+
+func (*Like) TableName() string {
+	return "like"
+}
+
+func (like *Like) InsertLike(db *gorm.DB) error {
+	return db.Create(like).Error
+}
+
+func (like *Like) RemoveLike(db *gorm.DB) error {
+	return db.Unscoped().Delete(like).Error
+}

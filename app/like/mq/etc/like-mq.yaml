@@ -8,6 +8,10 @@ KqConsumerConf:
   Offset: last
   Consumers: 1
   Processors: 1
+KqPusherConf:
+  Brokers:
+    - xxxxxxxxxx:9092
+  Topic: topic-like
 Mysql:
   Datasource: root:password@tcp(localhost:3306)/user?charset=utf8&parseTime=True&loc=Local
 BizRedis:
