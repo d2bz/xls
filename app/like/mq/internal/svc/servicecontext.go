@@ -18,7 +18,6 @@ type ServiceContext struct {
 func NewServiceContext(c config.Config) *ServiceContext {
 	return &ServiceContext{
 		Config:         c,
-		KqPusherClient: kq.NewPusher(c.KqPusherConf.Brokers, c.KqPusherConf.Topic),
 		MysqlDB:        model.InitMysql(c.Mysql.Datasource),
 		BizRedis:       *redis.MustNewRedis(c.BizRedis),
 	}

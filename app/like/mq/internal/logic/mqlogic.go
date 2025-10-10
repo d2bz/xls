@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/service"
-	"github.com/zeromicro/go-zero/core/threading"
 	"xls/app/like/mq/internal/model"
 	"xls/app/like/mq/internal/types"
 
@@ -31,11 +30,8 @@ func (l *MqLogic) Consume(_ context.Context, key, val string) error {
 	var msg *types.LikeMsg
 	err := json.Unmarshal([]byte(val), &msg)
 	if err != nil {
-		logx.Errorf("unmarshal msg key: %v val: %+v err: %v", key, val, err)
-		return nil
-	}
-	if msg.TargetType != 1 {
-		return nil
+		logx.Errorf("[like-mq]unmarshal msg key: %v val: %+v err: %v", key, val, err)
+		return err
 	}
 	// 写入数据库
 	db := l.svcCtx.MysqlDB
@@ -47,16 +43,14 @@ func (l *MqLogic) Consume(_ context.Context, key, val string) error {
 	if msg.IsLike == 0 {
 		err = lk.InsertLike(db)
 		if err != nil {
-			l.Logger.Errorf("insert likeMsg: %+v err: %v", msg, err)
-			retry(l, key, val)
-			return nil
+			logx.Errorf("[like-mq]insert likeMsg: %+v err: %v", msg, err)
+			return err
 		}
 	} else {
 		err = lk.RemoveLike(db)
 		if err != nil {
-			l.Logger.Errorf("remove likeMsg: %+v err: %v", msg, err)
-			retry(l, key, val)
-			return nil
+			logx.Errorf("[like-mq]remove likeMsg: %+v err: %v", msg, err)
+			return err
 		}
 	}
 	return nil
@@ -66,14 +60,4 @@ func Consumers(ctx context.Context, svcCtx *svc.ServiceContext) []service.Servic
 	return []service.Service{
 		kq.MustNewQueue(svcCtx.Config.KqConsumerConf, NewMqLogic(ctx, svcCtx)),
 	}
-}
-
-// 失败的消息写回原队列重试，有死循环风险，优化方案为另开一个重试队列和死信队列
-func retry(l *MqLogic, key, val string) {
-	threading.GoSafe(func() {
-		err := l.svcCtx.KqPusherClient.PushWithKey(context.Background(), key, val)
-		if err != nil {
-			l.Logger.Errorf("[like] kq push data: %v error: %v", val, err)
-		}
-	})
 }

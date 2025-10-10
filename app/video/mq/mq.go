@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"fmt"
+	"github.com/zeromicro/go-zero/core/service"
+	"xls/app/video/mq/internal/logic"
 
 	"xls/app/video/mq/internal/config"
 	"xls/app/video/mq/internal/svc"
@@ -18,7 +20,14 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
-	ctx := svc.NewServiceContext(c)
+	svcCtx := svc.NewServiceContext(c)
+	ctx := context.Background()
+	serviceGroup := service.NewServiceGroup()
+	defer serviceGroup.Stop()
 
-	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
+	for _, mq := range logic.Consumers(ctx, svcCtx) {
+		serviceGroup.Add(mq)
+	}
+
+	serviceGroup.Start()
 }

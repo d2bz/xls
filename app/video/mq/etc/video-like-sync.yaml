@@ -1,10 +1,10 @@
-Name: like-mq
+Name: video-like-sync-mq
 KqConsumerConf:
-  Name: like-kq-consumer
+  Name: video-like-sync-consumer
   Brokers:
-    - xxxxxxxxx.9092
-  Group: like
-  Topic: topic-like
+    - xxxxxxx:9092
+  Group: video-like-sync
+  Topic: like-sync
   Offset: last
   Consumers: 1
   Processors: 1

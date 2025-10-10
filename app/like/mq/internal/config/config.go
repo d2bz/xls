@@ -7,10 +7,6 @@ import (
 
 type Config struct {
 	KqConsumerConf kq.KqConf
-	KqPusherConf   struct {
-		Brokers []string
-		Topic   string
-	}
 	Mysql struct {
 		Datasource string
 	}
