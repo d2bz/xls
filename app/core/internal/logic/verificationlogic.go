@@ -21,21 +21,21 @@ const (
 	expireCD    = 60 * 1 // 发送验证码间隔
 )
 
-type VerificationLogicLogic struct {
+type VerificationLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-func NewVerificationLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *VerificationLogicLogic {
-	return &VerificationLogicLogic{
+func NewVerificationLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *VerificationLogic {
+	return &VerificationLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationRequest) (resp *types.VerificationResponse, err error) {
+func (l *VerificationLogic) VerificationLogic(req *types.VerificationRequest) (resp *types.VerificationResponse, err error) {
 	resp = new(types.VerificationResponse)
 	req.Email = strings.TrimSpace(req.Email)
 
@@ -83,7 +83,7 @@ func (l *VerificationLogicLogic) VerificationLogic(req *types.VerificationReques
 	return
 }
 
-func (l *VerificationLogicLogic) saveCodeToRedis(email, code string) (err error) {
+func (l *VerificationLogic) saveCodeToRedis(email, code string) (err error) {
 	vcKey := prefixVC + email
 	err = l.svcCtx.BizRedis.Setex(vcKey, code, expireVC)
 	if err != nil {

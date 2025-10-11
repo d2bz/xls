@@ -37,6 +37,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
+				Path:    "/comment",
+				Handler: CommentHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
 				Path:    "/like",
 				Handler: LikeHandler(serverCtx),
 			},

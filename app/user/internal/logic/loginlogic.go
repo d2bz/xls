@@ -30,7 +30,7 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 	resp = new(user.LoginResponse)
 
 	// 尝试从redis读取user信息
-	var u *model.User
+	u := new(model.User)
 	userStr, err := l.svcCtx.BizRedis.Get(prefixUser + in.Email)
 	if err != nil {
 		l.Logger.Errorf("get user cache failed: %v", err)
@@ -43,10 +43,11 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 		u, err = model.GetUserByEmail(db, in.Email)
 		if u == nil {
 			resp.Error = code.UserNotFound
-			return
+			return resp, nil
 		} else if err != nil {
-			logx.Errorf("Get user by email failed: %v", err)
-			return
+			l.Logger.Errorf("Get user by email failed: %v", err)
+			resp.Error = code.FAILED
+			return resp, nil
 		}
 	}
 
@@ -59,7 +60,7 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 	if err != nil {
 		l.Logger.Errorf("build token failed: %v", err)
 		resp.Error = code.FAILED
-		return
+		return resp, nil
 	}
 
 	return &user.LoginResponse{

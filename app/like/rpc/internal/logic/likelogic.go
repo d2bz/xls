@@ -67,7 +67,6 @@ func (l *LikeLogic) Like(in *like.LikeRequest) (*like.LikeResponse, error) {
 				l.Logger.Errorf("redis zadd isLike err: %v", err)
 			}
 		}
-
 	}
 
 	// 发送kq消息
@@ -90,6 +89,8 @@ func (l *LikeLogic) Like(in *like.LikeRequest) (*like.LikeResponse, error) {
 			l.Logger.Errorf("[like] kq push data: %v error: %v", data, err)
 		}
 	})
+
+	resp.Error = code.SUCCEED
 
 	return resp, nil
 }

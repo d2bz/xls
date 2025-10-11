@@ -52,8 +52,7 @@ service core-api {
 }
 
 type (
-	UploadVideoRequest {
-	}
+	UploadVideoRequest  {}
 	UploadVideoResponse {
 		Status
 		Url string `json:"url"`
@@ -73,6 +72,15 @@ type (
 	LikeResponse {
 		Status
 	}
+	CommentRequest {
+		TargetID     uint64 `json:"target_id"`
+		TargetUserID uint64 `json:"target_user_id"`
+		ParentID     uint64 `json:"parent_id"`
+		Content      string `json:"content"`
+	}
+	CommentResponse {
+		Status
+	}
 )
 
 @server (
@@ -87,5 +95,9 @@ service core-api {
 	post /publishVideo (PublishVideoRequest) returns (PublishVideoResponse)
 
 	@handler Like
-	post /like (LikeRequest) returns (LikeResponse)
+	post /likeResp (LikeRequest) returns (LikeResponse)
+
+	@handler Comment
+	post /comment (CommentRequest) returns (CommentResponse)
 }
+

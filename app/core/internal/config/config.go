@@ -8,12 +8,13 @@ import (
 
 type Config struct {
 	rest.RestConf
-	BizRedis redis.RedisConf
-	UserRPC  zrpc.RpcClientConf
-	VideoRPC zrpc.RpcClientConf
-	LikeRPC  zrpc.RpcClientConf
-	Auth     AuthConf
-	Minio    MinioConf
+	BizRedis   redis.RedisConf
+	UserRPC    zrpc.RpcClientConf
+	VideoRPC   zrpc.RpcClientConf
+	LikeRPC    zrpc.RpcClientConf
+	CommentRPC zrpc.RpcClientConf
+	Auth       AuthConf
+	Minio      MinioConf
 }
 
 type AuthConf struct {

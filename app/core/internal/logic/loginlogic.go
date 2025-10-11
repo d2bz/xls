@@ -13,21 +13,21 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type LoginLogicLogic struct {
+type LoginLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-func NewLoginLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogicLogic {
-	return &LoginLogicLogic{
+func NewLoginLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic {
+	return &LoginLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *LoginLogicLogic) LoginLogic(req *types.LoginRequest) (resp *types.LoginResponse, err error) {
+func (l *LoginLogic) LoginLogic(req *types.LoginRequest) (resp *types.LoginResponse, err error) {
 	resp = new(types.LoginResponse)
 	req.Email = strings.TrimSpace(req.Email)
 	req.Password = strings.TrimSpace(req.Password)

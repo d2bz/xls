@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"xls/app/core/internal/code"
@@ -14,21 +15,21 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
-type RegisterLogicLogic struct {
+type RegisterLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-func NewRegisterLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RegisterLogicLogic {
-	return &RegisterLogicLogic{
+func NewRegisterLogicLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RegisterLogic {
+	return &RegisterLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *types.RegisterResponse, err error) {
+func (l *RegisterLogic) RegisterLogic(req *types.RegisterRequest) (resp *types.RegisterResponse, err error) {
 	resp = new(types.RegisterResponse)
 	req.Email = strings.TrimSpace(req.Email)
 	req.Password = strings.TrimSpace(req.Password)
@@ -48,7 +49,7 @@ func (l *RegisterLogicLogic) RegisterLogic(req *types.RegisterRequest) (resp *ty
 
 	// 检查验证码
 	rdbCode, err := l.svcCtx.BizRedis.Get(prefixVC + req.Email)
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		resp.Status = code.VerificationCodeIsEmpty
 		return resp, nil
 	} else if err != nil {

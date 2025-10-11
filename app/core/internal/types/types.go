@@ -3,6 +3,17 @@
 
 package types
 
+type CommentRequest struct {
+	TargetID     uint64 `json:"target_id"`
+	TargetUserID uint64 `json:"target_user_id"`
+	ParentID     uint64 `json:"parent_id"`
+	Content      string `json:"content"`
+}
+
+type CommentResponse struct {
+	Status
+}
+
 type LikeRequest struct {
 	TargetID   uint64 `json:"target_id"`
 	TargetType int32  `json:"target_type"`

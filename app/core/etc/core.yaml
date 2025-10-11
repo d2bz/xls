@@ -23,6 +23,12 @@ LikeRPC:
       - 127.0.0.1:2379
     Key: like.rpc
   NonBlock: false
+CommentRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: comment.rpc
+  NonBlock: false
 Auth:
   AccessSecret: xxxxxxxxxx
   AccessExpire: 2592000

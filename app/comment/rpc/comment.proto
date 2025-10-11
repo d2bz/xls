@@ -1,0 +1,26 @@
+// goctl rpc protoc comment.proto --go_out=. --go-grpc_out=. --zrpc_out=.
+syntax = "proto3";
+
+package comment;
+option go_package="./comment";
+
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
+message CommentRequest {
+  uint64 UserID = 1;
+  uint64 TargetID = 2;
+  uint64 TargetUserID = 3;
+  uint64 ParentID = 4;
+  string Content = 5;
+}
+
+message CommentResponse {
+  Error error = 1;
+}
+
+service Comment {
+  rpc Comment(CommentRequest) returns (CommentResponse);
+}

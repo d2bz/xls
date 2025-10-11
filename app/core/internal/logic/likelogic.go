@@ -35,19 +35,19 @@ func (l *LikeLogic) Like(req *types.LikeRequest) (resp *types.LikeResponse, err 
 		return resp, nil
 	}
 
-	like, err := l.svcCtx.LikeRpc.Like(l.ctx, &like.LikeRequest{
+	likeResp, err := l.svcCtx.LikeRpc.Like(l.ctx, &like.LikeRequest{
 		UserID:     uint64(uid),
 		TargetID:   req.TargetID,
 		TargetType: req.TargetType,
 	})
 	if err != nil {
 		resp.Status = code.FAILED
-		l.Logger.Errorf("like rpc failed: %v", err)
+		l.Logger.Errorf("likeResp rpc failed: %v", err)
 		return resp, nil
 	}
-	if like.Error.Code != 0 {
-		resp.Status.StatusCode = int(like.Error.Code)
-		resp.Status.StatusMsg = like.Error.Message
+	if likeResp.Error.Code != 0 {
+		resp.Status.StatusCode = int(likeResp.Error.Code)
+		resp.Status.StatusMsg = likeResp.Error.Message
 		return resp, nil
 	}
 
