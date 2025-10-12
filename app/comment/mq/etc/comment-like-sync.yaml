@@ -1,0 +1,16 @@
+Name: comment-like-sync-mq
+KqConsumerConf:
+  Name: comment-like-sync-consumer
+  Brokers:
+    - xxxxxxx:9092
+  Group: comment-like-sync
+  Topic: like-sync
+  Offset: last
+  Consumers: 1
+  Processors: 1
+Mysql:
+  Datasource: root:password@tcp(localhost:3306)/user?charset=utf8&parseTime=True&loc=Local
+BizRedis:
+  Host: xxxxxx:6379
+  Pass: xxxxxx
+  Type: node

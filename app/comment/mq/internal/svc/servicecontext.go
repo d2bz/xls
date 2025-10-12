@@ -3,8 +3,8 @@ package svc
 import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/gorm"
-	"xls/app/video/mq/internal/config"
-	"xls/app/video/mq/internal/model"
+	"xls/app/comment/mq/internal/config"
+	"xls/app/comment/mq/internal/model"
 )
 
 type ServiceContext struct {
