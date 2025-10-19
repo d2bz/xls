@@ -1,0 +1,23 @@
+// goctl rpc protoc follow.proto --go_out=. --go-grpc_out=. --zrpc_out=.
+syntax = "proto3";
+
+package follow;
+option go_package="./follow";
+
+message Error {
+  int32 code = 1;
+  string message = 2;
+}
+
+message FollowRequest {
+  uint64 UserID = 1;
+  uint64 FollowedUserID = 2;
+}
+
+message FollowResponse {
+  Error Error = 1;
+}
+
+service Follow {
+  rpc Follow(FollowRequest) returns (FollowResponse);
+}
