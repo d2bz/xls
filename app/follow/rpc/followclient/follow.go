@@ -14,12 +14,15 @@ import (
 )
 
 type (
-	Error          = follow.Error
-	FollowRequest  = follow.FollowRequest
-	FollowResponse = follow.FollowResponse
+	Error            = follow.Error
+	FollowRequest    = follow.FollowRequest
+	FollowResponse   = follow.FollowResponse
+	UnFollowRequest  = follow.UnFollowRequest
+	UnFollowResponse = follow.UnFollowResponse
 
 	Follow interface {
 		Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error)
+		UnFollow(ctx context.Context, in *UnFollowRequest, opts ...grpc.CallOption) (*UnFollowResponse, error)
 	}
 
 	defaultFollow struct {
@@ -36,4 +39,9 @@ func NewFollow(cli zrpc.Client) Follow {
 func (m *defaultFollow) Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error) {
 	client := follow.NewFollowClient(m.cli.Conn())
 	return client.Follow(ctx, in, opts...)
+}
+
+func (m *defaultFollow) UnFollow(ctx context.Context, in *UnFollowRequest, opts ...grpc.CallOption) (*UnFollowResponse, error) {
+	client := follow.NewFollowClient(m.cli.Conn())
+	return client.UnFollow(ctx, in, opts...)
 }

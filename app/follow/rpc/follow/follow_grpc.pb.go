@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type FollowClient interface {
 	Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error)
+	UnFollow(ctx context.Context, in *UnFollowRequest, opts ...grpc.CallOption) (*UnFollowResponse, error)
 }
 
 type followClient struct {
@@ -42,11 +43,21 @@ func (c *followClient) Follow(ctx context.Context, in *FollowRequest, opts ...gr
 	return out, nil
 }
 
+func (c *followClient) UnFollow(ctx context.Context, in *UnFollowRequest, opts ...grpc.CallOption) (*UnFollowResponse, error) {
+	out := new(UnFollowResponse)
+	err := c.cc.Invoke(ctx, "/follow.Follow/UnFollow", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FollowServer is the server API for Follow service.
 // All implementations must embed UnimplementedFollowServer
 // for forward compatibility
 type FollowServer interface {
 	Follow(context.Context, *FollowRequest) (*FollowResponse, error)
+	UnFollow(context.Context, *UnFollowRequest) (*UnFollowResponse, error)
 	mustEmbedUnimplementedFollowServer()
 }
 
@@ -56,6 +67,9 @@ type UnimplementedFollowServer struct {
 
 func (UnimplementedFollowServer) Follow(context.Context, *FollowRequest) (*FollowResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Follow not implemented")
+}
+func (UnimplementedFollowServer) UnFollow(context.Context, *UnFollowRequest) (*UnFollowResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnFollow not implemented")
 }
 func (UnimplementedFollowServer) mustEmbedUnimplementedFollowServer() {}
 
@@ -88,6 +102,24 @@ func _Follow_Follow_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Follow_UnFollow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnFollowRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FollowServer).UnFollow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/follow.Follow/UnFollow",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FollowServer).UnFollow(ctx, req.(*UnFollowRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Follow_ServiceDesc is the grpc.ServiceDesc for Follow service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +130,10 @@ var Follow_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Follow",
 			Handler:    _Follow_Follow_Handler,
+		},
+		{
+			MethodName: "UnFollow",
+			Handler:    _Follow_UnFollow_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

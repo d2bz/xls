@@ -34,12 +34,12 @@ func (l *FollowLogic) Follow(in *follow.FollowRequest) (*follow.FollowResponse, 
 	resp := new(follow.FollowResponse)
 	f, err := model.FollowFindByUserIDAndFollowedUserID(l.svcCtx.MysqlDB, in.UserID, in.FollowedUserID)
 	if err != nil {
-		l.Logger.Error("find follow by user and followed user error: %v req: %v", err, in)
+		l.Logger.Errorf("[Follow] find follow by user and followed user error: %v req: %v", err, in)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
 
-	if f.FollowStatus == types.FollowStatusFollow {
+	if f.FollowStatus != types.FollowStatusUnfollow {
 		resp.Error = code.FollowStatusError
 		return resp, nil
 	}
@@ -48,11 +48,11 @@ func (l *FollowLogic) Follow(in *follow.FollowRequest) (*follow.FollowResponse, 
 
 	err = db.Transaction(func(tx *gorm.DB) error {
 		if f != nil {
-			err = model.FollowUpdateFields(db, f.ID, map[string]interface{}{
+			err = model.FollowUpdateFields(tx, f.ID, map[string]interface{}{
 				"follow_status": types.FollowStatusFollow,
 			})
 		} else {
-			err = model.FollowInsert(db, &model.Follow{
+			err = model.FollowInsert(tx, &model.Follow{
 				UserID:         in.UserID,
 				FollowedUserID: in.FollowedUserID,
 				FollowStatus:   types.FollowStatusFollow,
@@ -64,46 +64,48 @@ func (l *FollowLogic) Follow(in *follow.FollowRequest) (*follow.FollowResponse, 
 			return err
 		}
 
-		err = model.IncrFollowCount(db, in.UserID)
+		err = model.IncrFollowCount(tx, in.UserID)
 		if err != nil {
 			return err
 		}
-		return model.IncrFansCount(db, in.FollowedUserID)
+		return model.IncrFansCount(tx, in.FollowedUserID)
 	})
 
 	if err != nil {
-		l.Logger.Error("transaction err: %v", err)
+		l.Logger.Errorf("[Follow] transaction err: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
 
-	_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, userFollowKey(in.UserID), time.Now().UnixMilli(), strconv.FormatUint(in.UserID, 10))
+	_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, userFollowKey(in.UserID), time.Now().UnixMilli(), strconv.FormatUint(in.FollowedUserID, 10))
 	if err != nil {
-		l.Logger.Error("redis zadd follow err: %v", err)
+		l.Logger.Errorf("[Follow] redis zadd follow err: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
 
 	_, err = l.svcCtx.BizRedis.ZremrangebyrankCtx(l.ctx, userFollowKey(in.UserID), 0, -(types.CacheMaxFollowCount))
 	if err != nil {
-		l.Logger.Error("redis zremrangebyrank err: %v", err)
+		l.Logger.Errorf("[Follow] redis zremrangebyrank err: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
 
-	_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, userFansKey(in.FollowedUserID), time.Now().UnixMilli(), strconv.FormatUint(in.FollowedUserID, 10))
+	_, err = l.svcCtx.BizRedis.ZaddCtx(l.ctx, userFansKey(in.FollowedUserID), time.Now().UnixMilli(), strconv.FormatUint(in.UserID, 10))
 	if err != nil {
-		l.Logger.Error("redis zadd fans err: %v", err)
+		l.Logger.Errorf("[Follow] redis zadd fans err: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
 
 	_, err = l.svcCtx.BizRedis.ZremrangebyrankCtx(l.ctx, userFansKey(in.FollowedUserID), 0, -(types.CacheMaxFansCount))
 	if err != nil {
-		l.Logger.Error("redis zremrangebyrank err: %v", err)
+		l.Logger.Errorf("[Follow] redis zremrangebyrank err: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
+
+	resp.Error = code.SUCCEED
 
 	return resp, nil
 }

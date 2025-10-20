@@ -18,6 +18,16 @@ message FollowResponse {
   Error Error = 1;
 }
 
+message UnFollowRequest {
+  uint64 UserID = 1;
+  uint64 FollowedUserID = 2;
+}
+
+message UnFollowResponse {
+  Error error = 1;
+}
+
 service Follow {
-  rpc Follow(FollowRequest) returns (FollowResponse);
+  rpc Follow (FollowRequest) returns (FollowResponse);
+  rpc UnFollow (UnFollowRequest) returns (UnFollowResponse);
 }

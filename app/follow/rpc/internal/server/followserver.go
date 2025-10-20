@@ -27,3 +27,8 @@ func (s *FollowServer) Follow(ctx context.Context, in *follow.FollowRequest) (*f
 	l := logic.NewFollowLogic(ctx, s.svcCtx)
 	return l.Follow(in)
 }
+
+func (s *FollowServer) UnFollow(ctx context.Context, in *follow.UnFollowRequest) (*follow.UnFollowResponse, error) {
+	l := logic.NewUnFollowLogic(ctx, s.svcCtx)
+	return l.UnFollow(in)
+}
