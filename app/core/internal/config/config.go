@@ -13,6 +13,7 @@ type Config struct {
 	VideoRPC   zrpc.RpcClientConf
 	LikeRPC    zrpc.RpcClientConf
 	CommentRPC zrpc.RpcClientConf
+	FollowRPC  zrpc.RpcClientConf
 	Auth       AuthConf
 	Minio      MinioConf
 }

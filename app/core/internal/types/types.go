@@ -14,6 +14,14 @@ type CommentResponse struct {
 	Status
 }
 
+type FollowRequest struct {
+	FollowedUserID uint64 `json:"followed_user_id"`
+}
+
+type FollowResponse struct {
+	Status
+}
+
 type LikeRequest struct {
 	TargetID   uint64 `json:"target_id"`
 	TargetType int32  `json:"target_type"`
@@ -64,6 +72,14 @@ type Status struct {
 type Token struct {
 	AccessToken string `json:"access_token"`
 	ExpireAt    int64  `json:"expire_at"`
+}
+
+type UnFollowRequest struct {
+	FollowedUserID uint64 `json:"followed_user_id"`
+}
+
+type UnFollowResponse struct {
+	Status
 }
 
 type UploadVideoRequest struct {

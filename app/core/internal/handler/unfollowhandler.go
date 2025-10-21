@@ -9,16 +9,16 @@ import (
 	"xls/app/core/internal/types"
 )
 
-func VerificationLogicHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+func UnFollowHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.VerificationRequest
+		var req types.UnFollowRequest
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		l := logic.NewVerificationLogicLogic(r.Context(), svcCtx)
-		resp, err := l.VerificationLogic(&req)
+		l := logic.NewUnFollowLogic(r.Context(), svcCtx)
+		resp, err := l.UnFollow(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

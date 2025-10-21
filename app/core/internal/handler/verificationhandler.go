@@ -9,16 +9,16 @@ import (
 	"xls/app/core/internal/types"
 )
 
-func RegisterLogicHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+func VerificationHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.RegisterRequest
+		var req types.VerificationRequest
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		l := logic.NewRegisterLogicLogic(r.Context(), svcCtx)
-		resp, err := l.RegisterLogic(&req)
+		l := logic.NewVerificationLogicLogic(r.Context(), svcCtx)
+		resp, err := l.VerificationLogic(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

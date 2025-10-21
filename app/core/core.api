@@ -41,13 +41,13 @@ type (
 	prefix: /xls
 )
 service core-api {
-	@handler RegisterLogic
+	@handler Register
 	post /register (RegisterRequest) returns (RegisterResponse)
 
-	@handler LoginLogic
+	@handler Login
 	post /login (LoginRequest) returns (LoginResponse)
 
-	@handler VerificationLogic
+	@handler Verification
 	post /verification (VerificationRequest) returns (VerificationResponse)
 }
 
@@ -81,6 +81,18 @@ type (
 	CommentResponse {
 		Status
 	}
+	FollowRequest {
+		FollowedUserID uint64 `json:"followed_user_id"`
+	}
+	FollowResponse {
+		Status
+	}
+	UnFollowRequest {
+		FollowedUserID uint64 `json:"followed_user_id"`
+	}
+	UnFollowResponse {
+		Status
+	}
 )
 
 @server (
@@ -95,9 +107,15 @@ service core-api {
 	post /publishVideo (PublishVideoRequest) returns (PublishVideoResponse)
 
 	@handler Like
-	post /likeResp (LikeRequest) returns (LikeResponse)
+	post /like (LikeRequest) returns (LikeResponse)
 
 	@handler Comment
 	post /comment (CommentRequest) returns (CommentResponse)
+
+	@handler Follow
+	post /follow (FollowRequest) returns (FollowResponse)
+
+	@handler UnFollow
+	post /unfollow (UnFollowRequest) returns (UnFollowResponse)
 }
 

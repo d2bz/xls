@@ -17,17 +17,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			{
 				Method:  http.MethodPost,
 				Path:    "/login",
-				Handler: LoginLogicHandler(serverCtx),
+				Handler: LoginHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
 				Path:    "/register",
-				Handler: RegisterLogicHandler(serverCtx),
+				Handler: RegisterHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
 				Path:    "/verification",
-				Handler: VerificationLogicHandler(serverCtx),
+				Handler: VerificationHandler(serverCtx),
 			},
 		},
 		rest.WithPrefix("/xls"),
@@ -42,6 +42,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodPost,
+				Path:    "/follow",
+				Handler: FollowHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
 				Path:    "/like",
 				Handler: LikeHandler(serverCtx),
 			},
@@ -49,6 +54,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/publishVideo",
 				Handler: PublishVideoHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/unfollow",
+				Handler: UnFollowHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
