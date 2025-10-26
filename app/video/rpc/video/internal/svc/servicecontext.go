@@ -1,11 +1,10 @@
 package svc
 
 import (
-	"xls/app/video/rpc/video/internal/config"
-	"xls/app/video/rpc/video/model"
-
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/gorm"
+	"xls/app/video/rpc/video/internal/config"
+	"xls/app/video/rpc/video/internal/model"
 )
 
 type ServiceContext struct {

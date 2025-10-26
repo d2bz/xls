@@ -17,8 +17,6 @@ import (
 	"github.com/zeromicro/go-zero/core/threading"
 )
 
-const likePrefix = "like#"
-
 type LikeLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
@@ -39,7 +37,7 @@ func (l *LikeLogic) Like(in *like.LikeRequest) (*like.LikeResponse, error) {
 	// 判断是否点赞
 	var isLike int32
 	targetID, uid := strconv.FormatUint(in.TargetID, 10), strconv.FormatUint(in.UserID, 10)
-	likeKey := likePrefix + targetID
+	likeKey := LikeKey(targetID, in.TargetType)
 	score, err := l.svcCtx.BizRedis.Zscore(likeKey, uid)
 	if err != nil {
 		l.Logger.Errorf("redis get score of isLike err: %v", err)
@@ -99,5 +97,13 @@ func unlike(l *LikeLogic, likeKey, uid string) {
 	_, err := l.svcCtx.BizRedis.Zrem(likeKey, uid)
 	if err != nil {
 		l.Logger.Errorf("redis zrem err: %v", err)
+	}
+}
+
+func LikeKey(targetID string, targetType int32) string {
+	if targetType == types.VideoLike {
+		return fmt.Sprintf("like#video#%s", targetID)
+	} else {
+		return fmt.Sprintf("like#comment#%s", targetID)
 	}
 }

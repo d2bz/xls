@@ -2,10 +2,10 @@ package logic
 
 import (
 	"context"
+	"xls/app/video/rpc/video/internal/model"
 
 	"xls/app/video/rpc/video/internal/code"
 	"xls/app/video/rpc/video/internal/svc"
-	"xls/app/video/rpc/video/model"
 	"xls/app/video/rpc/video/video"
 
 	"github.com/zeromicro/go-zero/core/logx"

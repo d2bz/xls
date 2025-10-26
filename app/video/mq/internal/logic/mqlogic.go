@@ -39,7 +39,7 @@ func (l *MqLogic) Consume(_ context.Context, _, val string) error {
 	}
 	for _, data := range msg.Data {
 		targetType, _ := strconv.Atoi(data.TargetType)
-		if targetType != 1 {
+		if targetType != types.VideoLike {
 			continue
 		}
 
