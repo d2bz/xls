@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
+	LikeRPC  zrpc.RpcClientConf
 	Mysql    MysqlConf
 	BizRedis redis.RedisConf
 }

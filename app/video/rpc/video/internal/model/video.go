@@ -18,3 +18,9 @@ func (v *Video) TableName() string {
 func (v *Video) Insert(db *gorm.DB) error {
 	return db.Create(v).Error
 }
+
+func FindVideoByID(db *gorm.DB, videoID uint) (*Video, error) {
+	var video *Video
+	err := db.Where("id = ?", videoID).First(video).Error
+	return video, err
+}

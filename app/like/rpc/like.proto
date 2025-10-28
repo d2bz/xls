@@ -19,6 +19,16 @@ message LikeResponse {
   Error error = 1;
 }
 
+message HotVideoIDListRequest {
+
+}
+
+message HotVideoIDListResponse {
+  Error error = 1;
+  repeated string videoIDs = 2;
+}
+
 service Like {
-  rpc Like(LikeRequest) returns(LikeResponse);
+  rpc Like(LikeRequest) returns (LikeResponse);
+  rpc HotVideoIDList(HotVideoIDListRequest) returns (HotVideoIDListResponse);
 }

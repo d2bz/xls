@@ -3,7 +3,7 @@ package logic
 import (
 	"context"
 	"encoding/json"
-	"xls/app/comment/rpc/comment"
+	"xls/app/comment/rpc/commentclient"
 	"xls/app/core/internal/code"
 
 	"xls/app/core/internal/svc"
@@ -34,7 +34,7 @@ func (l *CommentLogic) Comment(req *types.CommentRequest) (resp *types.CommentRe
 		return resp, nil
 	}
 
-	commentResp, err := l.svcCtx.CommentRpc.Comment(l.ctx, &comment.CommentRequest{
+	commentResp, err := l.svcCtx.CommentRpc.Comment(l.ctx, &commentclient.CommentRequest{
 		UserID:       uint64(uid),
 		TargetID:     req.TargetID,
 		TargetUserID: req.TargetUserID,

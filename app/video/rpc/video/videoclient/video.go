@@ -14,12 +14,16 @@ import (
 )
 
 type (
-	Error           = video.Error
-	PublishRequest  = video.PublishRequest
-	PublishResponse = video.PublishResponse
+	Error                = video.Error
+	HotVideoListRequest  = video.HotVideoListRequest
+	HotVideoListResponse = video.HotVideoListResponse
+	PublishRequest       = video.PublishRequest
+	PublishResponse      = video.PublishResponse
+	VideoItem            = video.VideoItem
 
 	Video interface {
 		Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
+		HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error)
 	}
 
 	defaultVideo struct {
@@ -36,4 +40,9 @@ func NewVideo(cli zrpc.Client) Video {
 func (m *defaultVideo) Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error) {
 	client := video.NewVideoClient(m.cli.Conn())
 	return client.Publish(ctx, in, opts...)
+}
+
+func (m *defaultVideo) HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error) {
+	client := video.NewVideoClient(m.cli.Conn())
+	return client.HotVideoList(ctx, in, opts...)
 }

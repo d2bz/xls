@@ -27,3 +27,8 @@ func (s *LikeServer) Like(ctx context.Context, in *like.LikeRequest) (*like.Like
 	l := logic.NewLikeLogic(ctx, s.svcCtx)
 	return l.Like(in)
 }
+
+func (s *LikeServer) HotVideoIDList(ctx context.Context, in *like.HotVideoIDListRequest) (*like.HotVideoIDListResponse, error) {
+	l := logic.NewHotVideoIDListLogic(ctx, s.svcCtx)
+	return l.HotVideoIDList(in)
+}

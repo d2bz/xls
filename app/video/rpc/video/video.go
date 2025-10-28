@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"xls/app/video/rpc/video/internal/cron"
-
 	"xls/app/video/rpc/video/internal/config"
 	"xls/app/video/rpc/video/internal/server"
 	"xls/app/video/rpc/video/internal/svc"
@@ -34,8 +32,6 @@ func main() {
 		}
 	})
 	defer s.Stop()
-
-	go cron.ScheduledTask(ctx)
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()

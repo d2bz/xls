@@ -3,13 +3,12 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"xls/app/like/rpc/likeclient"
 
+	"github.com/zeromicro/go-zero/core/logx"
 	"xls/app/core/internal/code"
 	"xls/app/core/internal/svc"
 	"xls/app/core/internal/types"
-	"xls/app/like/rpc/like"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type LikeLogic struct {
@@ -35,7 +34,7 @@ func (l *LikeLogic) Like(req *types.LikeRequest) (resp *types.LikeResponse, err 
 		return resp, nil
 	}
 
-	likeResp, err := l.svcCtx.LikeRpc.Like(l.ctx, &like.LikeRequest{
+	likeResp, err := l.svcCtx.LikeRpc.Like(l.ctx, &likeclient.LikeRequest{
 		UserID:     uint64(uid),
 		TargetID:   req.TargetID,
 		TargetType: req.TargetType,

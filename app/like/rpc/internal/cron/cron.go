@@ -8,14 +8,8 @@ import (
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"strings"
 	"time"
-	"xls/app/video/rpc/video/internal/svc"
-	"xls/app/video/rpc/video/internal/types"
-)
-
-const (
-	likeKey = "like#video#"
-	hotKey  = "hot#video#24h"
-	tempKey = "hot#video#24h#temp"
+	"xls/app/like/rpc/internal/svc"
+	"xls/app/like/rpc/internal/types"
 )
 
 func ScheduledTask(ctx *svc.ServiceContext) {
@@ -63,6 +57,7 @@ func genHotVideoCache(cbg context.Context, ctx *svc.ServiceContext) {
 		}
 	}
 
+	likeKey, hotKey, tempKey := types.LikeKey, types.HotKey, types.TempHotKey
 	var zs []redis.Z
 
 	for _, key := range keys {

@@ -14,12 +14,15 @@ import (
 )
 
 type (
-	Error        = like.Error
-	LikeRequest  = like.LikeRequest
-	LikeResponse = like.LikeResponse
+	Error                  = like.Error
+	HotVideoIDListRequest  = like.HotVideoIDListRequest
+	HotVideoIDListResponse = like.HotVideoIDListResponse
+	LikeRequest            = like.LikeRequest
+	LikeResponse           = like.LikeResponse
 
 	Like interface {
 		Like(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*LikeResponse, error)
+		HotVideoIDList(ctx context.Context, in *HotVideoIDListRequest, opts ...grpc.CallOption) (*HotVideoIDListResponse, error)
 	}
 
 	defaultLike struct {
@@ -36,4 +39,9 @@ func NewLike(cli zrpc.Client) Like {
 func (m *defaultLike) Like(ctx context.Context, in *LikeRequest, opts ...grpc.CallOption) (*LikeResponse, error) {
 	client := like.NewLikeClient(m.cli.Conn())
 	return client.Like(ctx, in, opts...)
+}
+
+func (m *defaultLike) HotVideoIDList(ctx context.Context, in *HotVideoIDListRequest, opts ...grpc.CallOption) (*HotVideoIDListResponse, error) {
+	client := like.NewLikeClient(m.cli.Conn())
+	return client.HotVideoIDList(ctx, in, opts...)
 }

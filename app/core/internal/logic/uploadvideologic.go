@@ -59,7 +59,8 @@ func (l *UploadVideoLogic) UploadVideo(file *multipart.File, header *multipart.F
 	fileURL := fmt.Sprintf("http://%s/%s/%s", l.svcCtx.Config.Minio.Endpoint, l.svcCtx.Config.Minio.Bucket, objectName)
 
 	resp = &types.UploadVideoResponse{
-		Url: fileURL,
+		Status: code.SUCCEED,
+		Url:    fileURL,
 	}
 
 	return resp, nil

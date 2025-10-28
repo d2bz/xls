@@ -20,6 +20,24 @@ message publishResponse {
   int32 videoID = 2;
 }
 
+message hotVideoListRequest {
+}
+
+message videoItem {
+  int32 videoID = 1;
+  int32 authorID = 2;
+  string title = 3;
+  string url = 4;
+  int32 likeNum = 5;
+  int32 commentNum = 6;
+}
+
+message hotVideoListResponse {
+  Error error = 1;
+  repeated videoItem hotVideoList = 2;
+}
+
 service Video {
-  rpc Publish(publishRequest) returns(publishResponse);
+  rpc Publish(publishRequest) returns (publishResponse);
+  rpc HotVideoList(hotVideoListRequest) returns (hotVideoListResponse);
 }

@@ -3,13 +3,12 @@ package logic
 import (
 	"context"
 	"encoding/json"
+	"xls/app/video/rpc/video/videoclient"
 
+	"github.com/zeromicro/go-zero/core/logx"
 	"xls/app/core/internal/code"
 	"xls/app/core/internal/svc"
 	"xls/app/core/internal/types"
-	"xls/app/video/rpc/video/video"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 type PublishVideoLogic struct {
@@ -35,7 +34,7 @@ func (l *PublishVideoLogic) PublishVideo(req *types.PublishVideoRequest) (resp *
 		return resp, nil
 	}
 
-	video, err := l.svcCtx.VideoRpc.Publish(l.ctx, &video.PublishRequest{
+	video, err := l.svcCtx.VideoRpc.Publish(l.ctx, &videoclient.PublishRequest{
 		Uid:   int32(uid),
 		Title: req.Title,
 		Url:   req.Url,
