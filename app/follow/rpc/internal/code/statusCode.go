@@ -8,6 +8,7 @@ var (
 	SUCCEED           = response(0, "成功")
 	FAILED            = response(1, "失败")
 	FollowStatusError = response(40001, "关注状态不匹配")
+	UserIDIsEmpty     = response(40002, "用户ID为空")
 )
 
 func response(code int32, msg string) *follow.Error {

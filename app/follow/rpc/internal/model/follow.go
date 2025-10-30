@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"errors"
 	"gorm.io/gorm"
 	"time"
@@ -14,6 +15,16 @@ type Follow struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+}
+
+type FollowModel struct {
+	db *gorm.DB
+}
+
+func NewFollowModel(db *gorm.DB) *FollowModel {
+	return &FollowModel{
+		db: db,
+	}
 }
 
 func (*Follow) TableName() string {
@@ -35,4 +46,13 @@ func FollowFindByUserIDAndFollowedUserID(db *gorm.DB, userID uint64, followedUse
 
 func FollowUpdateFields(db *gorm.DB, id uint64, values map[string]interface{}) error {
 	return db.Model(&Follow{}).Where("id = ?", id).Updates(values).Error
+}
+
+func (m *FollowModel) FindByFollowedUserIDs(ctx context.Context, userID uint64, followedUserIDs []uint64) ([]*Follow, error) {
+	var results []*Follow
+	err := m.db.WithContext(ctx).
+		Where("user_id = ? AND followed_user_id IN (?)", userID, followedUserIDs).
+		Find(&results).Error
+
+	return results, err
 }

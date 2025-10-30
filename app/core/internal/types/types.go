@@ -22,6 +22,14 @@ type FollowResponse struct {
 	Status
 }
 
+type HotVideoListRequest struct {
+}
+
+type HotVideoListResponse struct {
+	Status
+	VideoList []VideoItem `json:"video_list"`
+}
+
 type LikeRequest struct {
 	TargetID   uint64 `json:"target_id"`
 	TargetType int32  `json:"target_type"`
@@ -96,4 +104,13 @@ type VerificationRequest struct {
 
 type VerificationResponse struct {
 	Status
+}
+
+type VideoItem struct {
+	VideoID    int32  `json:"video_id"`
+	AuthorID   int32  `json:"author_id"`
+	Title      string `json:"title"`
+	Url        string `json:"url"`
+	LikeNum    int32  `json:"like_num"`
+	CommentNum int32  `json:"comment_num"`
 }

@@ -27,7 +27,30 @@ message UnFollowResponse {
   Error error = 1;
 }
 
+message FollowItem {
+  uint64 ID = 1;
+  uint64 followedUserID = 2;
+  int64 fansCount = 3;
+  int64 createTime = 4;
+}
+
+message FollowListRequest {
+  uint64 ID = 1;
+  uint64 UserID = 2;
+  int64 cursor = 3;
+  int64 pageSize = 4;
+}
+
+message FollowListResponse {
+  repeated FollowItem follows = 1;
+  int64 cursor = 2;
+  bool isEnd = 3;
+  uint64 ID = 4;
+  Error error = 5;
+}
+
 service Follow {
   rpc Follow (FollowRequest) returns (FollowResponse);
   rpc UnFollow (UnFollowRequest) returns (UnFollowResponse);
+  rpc FollowList (FollowListRequest) returns (FollowListResponse);
 }

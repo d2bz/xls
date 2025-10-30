@@ -35,6 +35,19 @@ type (
 	VerificationResponse {
 		Status
 	}
+	HotVideoListRequest  {}
+	VideoItem {
+		VideoID    int32  `json:"video_id"`
+		AuthorID   int32  `json:"author_id"`
+		Title      string `json:"title"`
+		Url        string `json:"url"`
+		LikeNum    int32  `json:"like_num"`
+		CommentNum int32  `json:"comment_num"`
+	}
+	HotVideoListResponse {
+		Status
+		VideoList []VideoItem `json:"video_list"`
+	}
 )
 
 @server (
@@ -49,6 +62,9 @@ service core-api {
 
 	@handler Verification
 	post /verification (VerificationRequest) returns (VerificationResponse)
+
+	@handler HotVideoList
+	get /video/hotVideoList (HotVideoListRequest) returns (HotVideoListResponse)
 }
 
 type (

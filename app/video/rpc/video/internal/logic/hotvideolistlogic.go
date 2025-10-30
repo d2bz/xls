@@ -28,7 +28,7 @@ func NewHotVideoListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HotV
 	}
 }
 
-func (l *HotVideoListLogic) HotVideoList(in *video.HotVideoListRequest) (*video.HotVideoListResponse, error) {
+func (l *HotVideoListLogic) HotVideoList() (*video.HotVideoListResponse, error) {
 	resp := new(video.HotVideoListResponse)
 
 	videoIDList, err := l.svcCtx.LikeRPC.HotVideoIDList(l.ctx, &likeclient.HotVideoIDListRequest{})
