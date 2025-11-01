@@ -39,7 +39,7 @@ func (l *FollowLogic) Follow(in *follow.FollowRequest) (*follow.FollowResponse, 
 		return resp, nil
 	}
 
-	if f.FollowStatus != types.FollowStatusUnfollow {
+	if f.FollowStatus == types.FollowStatusFollow {
 		resp.Error = code.FollowStatusError
 		return resp, nil
 	}

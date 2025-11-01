@@ -52,7 +52,19 @@ func (m *FollowModel) FindByFollowedUserIDs(ctx context.Context, userID uint64, 
 	var results []*Follow
 	err := m.db.WithContext(ctx).
 		Where("user_id = ? AND followed_user_id IN (?)", userID, followedUserIDs).
+		Order("created_at DESC").
 		Find(&results).Error
 
 	return results, err
+}
+
+func (m *FollowModel) FindByUserID(ctx context.Context, userID uint64, limit int) ([]*Follow, error) {
+	var result []*Follow
+	err := m.db.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Limit(limit).
+		Find(&result).Error
+
+	return result, err
 }
