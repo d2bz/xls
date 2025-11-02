@@ -15,6 +15,9 @@ import (
 
 type (
 	Error              = follow.Error
+	FansItem           = follow.FansItem
+	FansListRequest    = follow.FansListRequest
+	FansListResponse   = follow.FansListResponse
 	FollowItem         = follow.FollowItem
 	FollowListRequest  = follow.FollowListRequest
 	FollowListResponse = follow.FollowListResponse
@@ -27,6 +30,7 @@ type (
 		Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error)
 		UnFollow(ctx context.Context, in *UnFollowRequest, opts ...grpc.CallOption) (*UnFollowResponse, error)
 		FollowList(ctx context.Context, in *FollowListRequest, opts ...grpc.CallOption) (*FollowListResponse, error)
+		FansList(ctx context.Context, in *FansListRequest, opts ...grpc.CallOption) (*FansListResponse, error)
 	}
 
 	defaultFollow struct {
@@ -53,4 +57,9 @@ func (m *defaultFollow) UnFollow(ctx context.Context, in *UnFollowRequest, opts 
 func (m *defaultFollow) FollowList(ctx context.Context, in *FollowListRequest, opts ...grpc.CallOption) (*FollowListResponse, error) {
 	client := follow.NewFollowClient(m.cli.Conn())
 	return client.FollowList(ctx, in, opts...)
+}
+
+func (m *defaultFollow) FansList(ctx context.Context, in *FansListRequest, opts ...grpc.CallOption) (*FansListResponse, error) {
+	client := follow.NewFollowClient(m.cli.Conn())
+	return client.FansList(ctx, in, opts...)
 }

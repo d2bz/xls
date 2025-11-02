@@ -46,9 +46,19 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: CommentHandler(serverCtx),
 			},
 			{
+				Method:  http.MethodGet,
+				Path:    "/fansList",
+				Handler: FansListHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodPost,
 				Path:    "/follow",
 				Handler: FollowHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/followList",
+				Handler: FollowListHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,

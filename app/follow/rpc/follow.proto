@@ -49,8 +49,31 @@ message FollowListResponse {
   Error error = 5;
 }
 
+message FansItem {
+  uint64 fansUserID = 1;
+  int64 followCount = 2;
+  int64 fansCount = 3;
+  int64 createTime = 4;
+}
+
+message FansListRequest {
+  uint64 userID = 1;
+  int64 cursor = 2;
+  int64 pageSize = 3;
+  uint64 lastFansID = 4;
+}
+
+message FansListResponse {
+  repeated FansItem fans = 1;
+  int64 cursor = 2;
+  bool isEnd = 3;
+  uint64 lastFansID = 4;
+  Error error = 5;
+}
+
 service Follow {
   rpc Follow (FollowRequest) returns (FollowResponse);
   rpc UnFollow (UnFollowRequest) returns (UnFollowResponse);
   rpc FollowList (FollowListRequest) returns (FollowListResponse);
+  rpc FansList (FansListRequest) returns (FansListResponse);
 }

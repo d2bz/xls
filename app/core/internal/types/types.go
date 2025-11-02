@@ -14,6 +14,48 @@ type CommentResponse struct {
 	Status
 }
 
+type FansItem struct {
+	FansUserID  uint64 `json:"fans_user_id"`
+	FollowCount int64  `json:"follow_count"`
+	FansCount   int64  `json:"fans_count"`
+	CreateTime  int64  `json:"create_time"`
+}
+
+type FansListRequest struct {
+	Cursor     int64  `json:"cursor"`
+	PageSize   int64  `json:"page_size"`
+	LastFansID uint64 `json:"last_fans_id"`
+}
+
+type FansListResponse struct {
+	Status
+	Fans       []FansItem `json:"fans"`
+	Cursor     int64      `json:"cursor"`
+	IsEnd      bool       `json:"is_end"`
+	LastFansID uint64     `json:"last_fans_id"`
+}
+
+type FollowItem struct {
+	ID             uint64 `json:"id"`
+	FollowedUserID uint64 `json:"follow_user_id"`
+	FansCount      int64  `json:"fans_count"`
+	CreateTime     int64  `json:"create_time"`
+}
+
+type FollowListRequest struct {
+	ID       uint64 `json:"id"`
+	Cursor   int64  `json:"cursor"`
+	PageSize int64  `json:"page_size"`
+}
+
+type FollowListResponse struct {
+	Status
+	Follows []FollowItem `json:"follows"`
+	Cursor  int64        `json:"cursor"`
+	IsEnd   bool         `json:"is_end"`
+	ID      uint64       `json:"id"`
+}
+
 type FollowRequest struct {
 	FollowedUserID uint64 `json:"followed_user_id"`
 }

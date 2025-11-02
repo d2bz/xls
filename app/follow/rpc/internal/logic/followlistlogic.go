@@ -176,7 +176,7 @@ func (l *FollowListLogic) FollowList(in *follow.FollowListRequest) (*follow.Foll
 			}
 			err = l.addCacheFollow(context.Background(), in.UserID, follows)
 			if err != nil {
-				l.Logger.Errorf("[followList] addCacheFollow err: %v", err)
+				logx.Errorf("[followList] addCacheFollow err: %v", err)
 			}
 		})
 	}

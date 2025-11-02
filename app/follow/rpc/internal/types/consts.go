@@ -1,8 +1,8 @@
 package types
 
 const (
-	FollowStatusFollow = iota
-	FollowStatusUnfollow
+	FollowStatusUnfollow = iota
+	FollowStatusFollow
 )
 
 const (

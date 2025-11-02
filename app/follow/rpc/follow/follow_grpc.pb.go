@@ -25,6 +25,7 @@ type FollowClient interface {
 	Follow(ctx context.Context, in *FollowRequest, opts ...grpc.CallOption) (*FollowResponse, error)
 	UnFollow(ctx context.Context, in *UnFollowRequest, opts ...grpc.CallOption) (*UnFollowResponse, error)
 	FollowList(ctx context.Context, in *FollowListRequest, opts ...grpc.CallOption) (*FollowListResponse, error)
+	FansList(ctx context.Context, in *FansListRequest, opts ...grpc.CallOption) (*FansListResponse, error)
 }
 
 type followClient struct {
@@ -62,6 +63,15 @@ func (c *followClient) FollowList(ctx context.Context, in *FollowListRequest, op
 	return out, nil
 }
 
+func (c *followClient) FansList(ctx context.Context, in *FansListRequest, opts ...grpc.CallOption) (*FansListResponse, error) {
+	out := new(FansListResponse)
+	err := c.cc.Invoke(ctx, "/follow.Follow/FansList", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FollowServer is the server API for Follow service.
 // All implementations must embed UnimplementedFollowServer
 // for forward compatibility
@@ -69,6 +79,7 @@ type FollowServer interface {
 	Follow(context.Context, *FollowRequest) (*FollowResponse, error)
 	UnFollow(context.Context, *UnFollowRequest) (*UnFollowResponse, error)
 	FollowList(context.Context, *FollowListRequest) (*FollowListResponse, error)
+	FansList(context.Context, *FansListRequest) (*FansListResponse, error)
 	mustEmbedUnimplementedFollowServer()
 }
 
@@ -84,6 +95,9 @@ func (UnimplementedFollowServer) UnFollow(context.Context, *UnFollowRequest) (*U
 }
 func (UnimplementedFollowServer) FollowList(context.Context, *FollowListRequest) (*FollowListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FollowList not implemented")
+}
+func (UnimplementedFollowServer) FansList(context.Context, *FansListRequest) (*FansListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FansList not implemented")
 }
 func (UnimplementedFollowServer) mustEmbedUnimplementedFollowServer() {}
 
@@ -152,6 +166,24 @@ func _Follow_FollowList_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Follow_FansList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FansListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FollowServer).FansList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/follow.Follow/FansList",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FollowServer).FansList(ctx, req.(*FansListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Follow_ServiceDesc is the grpc.ServiceDesc for Follow service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +202,10 @@ var Follow_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FollowList",
 			Handler:    _Follow_FollowList_Handler,
+		},
+		{
+			MethodName: "FansList",
+			Handler:    _Follow_FansList_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

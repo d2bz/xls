@@ -109,6 +109,42 @@ type (
 	UnFollowResponse {
 		Status
 	}
+	FollowItem {
+		ID             uint64 `json:"id"`
+		FollowedUserID uint64 `json:"follow_user_id"`
+		FansCount      int64  `json:"fans_count"`
+		CreateTime     int64  `json:"create_time"`
+	}
+	FollowListRequest {
+		ID       uint64 `json:"id"`
+		Cursor   int64  `json:"cursor"`
+		PageSize int64  `json:"page_size"`
+	}
+	FollowListResponse {
+		Status
+		follows []FollowItem `json:"follows"`
+		Cursor  int64        `json:"cursor"`
+		IsEnd   bool         `json:"is_end"`
+		ID      uint64       `json:"id"`
+	}
+	FansItem {
+		FansUserID  uint64 `json:"fans_user_id"`
+		FollowCount int64  `json:"follow_count"`
+		FansCount   int64  `json:"fans_count"`
+		CreateTime  int64  `json:"create_time"`
+	}
+	FansListRequest {
+		Cursor     int64  `json:"cursor"`
+		PageSize   int64  `json:"page_size"`
+		LastFansID uint64 `json:"last_fans_id"`
+	}
+	FansListResponse {
+		Status
+		Fans       []FansItem `json:"fans"`
+		Cursor     int64      `json:"cursor"`
+		IsEnd      bool       `json:"is_end"`
+		LastFansID uint64     `json:"last_fans_id"`
+	}
 )
 
 @server (
@@ -133,5 +169,11 @@ service core-api {
 
 	@handler UnFollow
 	post /unfollow (UnFollowRequest) returns (UnFollowResponse)
+
+	@handler FollowList
+	get /followList (FollowListRequest) returns (FollowListResponse)
+
+	@handler FansList
+	get /fansList (FansListRequest) returns (FansListResponse)
 }
 
