@@ -11,11 +11,14 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
-require github.com/golang-jwt/jwt/v5 v5.2.2
+require (
+	github.com/go-co-op/gocron/v2 v2.17.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
+	golang.org/x/sync v0.15.0
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/go-co-op/gocron/v2 v2.17.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/jonboulle/clockwork v0.5.0 // indirect

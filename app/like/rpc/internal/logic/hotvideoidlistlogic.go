@@ -33,21 +33,40 @@ func (l *HotVideoIDListLogic) HotVideoIDList(in *like.HotVideoIDListRequest) (*l
 	resp := new(like.HotVideoIDListResponse)
 
 	videoIDList, err := l.getHotVideoIDListFromCache()
-	if err != nil {
-		videoIDList, err = l.getHotVideoIDListFromDB()
-		if err != nil || videoIDList == nil {
-			l.Logger.Errorf("[hotVideoIDListLogic] getHotVideoIDListFromDB error: %v videoIDList: %v", err, videoIDList)
-			resp.Error = code.FAILED
-			return resp, nil
+	if err == nil && len(videoIDList) > 0 {
+		resp.VideoIDs = videoIDList
+		resp.Error = code.SUCCEED
+		return resp, nil
+	}
+
+	v, err, _ := l.svcCtx.SingleFlightGroup.Do("hot_video_id_list", func() (interface{}, error) {
+		// 再次检查缓存（防止其他请求已写入）
+		videoIDList, err := l.getHotVideoIDListFromCache()
+		if err == nil && len(videoIDList) > 0 {
+			return videoIDList, nil
 		}
 
+		// 查数据库
+		videoIDList, err = l.getHotVideoIDListFromDB()
+		if err != nil || len(videoIDList) == 0 {
+			return nil, err
+		}
+
+		// 异步更新缓存
 		threading.GoSafe(func() {
 			l.setTempHotVideoIDListCache(videoIDList)
 		})
 
+		return videoIDList, nil
+	})
+
+	if err != nil {
+		l.Logger.Errorf("get HotVideoIDList from db error: %v", err)
+		resp.Error = code.FAILED
+		return resp, nil
 	}
 
-	resp.VideoIDs = videoIDList
+	resp.VideoIDs = v.([]string)
 	resp.Error = code.SUCCEED
 
 	return resp, nil

@@ -7,13 +7,16 @@ import (
 	"github.com/zeromicro/go-queue/kq"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/gorm"
+
+	"golang.org/x/sync/singleflight"
 )
 
 type ServiceContext struct {
-	Config         config.Config
-	MysqlDB        *gorm.DB
-	BizRedis       redis.Redis
-	KqPusherClient *kq.Pusher
+	Config            config.Config
+	MysqlDB           *gorm.DB
+	BizRedis          redis.Redis
+	KqPusherClient    *kq.Pusher
+	SingleFlightGroup singleflight.Group
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
