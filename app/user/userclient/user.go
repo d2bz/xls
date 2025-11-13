@@ -20,10 +20,13 @@ type (
 	RegisterRequest  = user.RegisterRequest
 	RegisterResponse = user.RegisterResponse
 	Token            = user.Token
+	UserInfoRequest  = user.UserInfoRequest
+	UserInfoResponse = user.UserInfoResponse
 
 	User interface {
 		Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 		Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+		UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoResponse, error)
 	}
 
 	defaultUser struct {
@@ -45,4 +48,9 @@ func (m *defaultUser) Register(ctx context.Context, in *RegisterRequest, opts ..
 func (m *defaultUser) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
 	client := user.NewUserClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
+}
+
+func (m *defaultUser) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoResponse, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.UserInfo(ctx, in, opts...)
 }

@@ -37,8 +37,21 @@ message LoginResponse {
   int64 id = 3;
 }
 
+message UserInfoRequest {
+  uint64 userID = 1;
+}
+
+message UserInfoResponse {
+  Error error = 1;
+  uint64 userId = 2;
+  string name = 3;
+  string email = 4;
+  string avatar = 5;
+}
+
 
 service User {
   rpc Register (RegisterRequest) returns (RegisterResponse);
   rpc Login (LoginRequest) returns (LoginResponse);
+  rpc UserInfo (UserInfoRequest) returns (UserInfoResponse);
 }

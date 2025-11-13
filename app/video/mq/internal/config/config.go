@@ -6,9 +6,15 @@ import (
 )
 
 type Config struct {
-	KqConsumerConf kq.KqConf
-	Mysql struct {
+	LikeSyncKqConsumerConf kq.KqConf
+	VideoKqConsumerConf    kq.KqConf
+	Mysql                  struct {
 		Datasource string
 	}
-	BizRedis redis.RedisConf
+	BizRedis      redis.RedisConf
+	Elasticsearch struct {
+		Address  []string
+		Username string
+		Password string
+	}
 }

@@ -32,3 +32,8 @@ func (s *UserServer) Login(ctx context.Context, in *user.LoginRequest) (*user.Lo
 	l := logic.NewLoginLogic(ctx, s.svcCtx)
 	return l.Login(in)
 }
+
+func (s *UserServer) UserInfo(ctx context.Context, in *user.UserInfoRequest) (*user.UserInfoResponse, error) {
+	l := logic.NewUserInfoLogic(ctx, s.svcCtx)
+	return l.UserInfo(in)
+}

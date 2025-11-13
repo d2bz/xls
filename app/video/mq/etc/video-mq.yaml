@@ -1,0 +1,30 @@
+Name: video-mq
+LikeSyncKqConsumerConf:
+  Name: video-like-sync-consumer
+  Brokers:
+    - xxxxxxx:9092
+  Group: video-like-sync
+  Topic: like-sync
+  Offset: last
+  Consumers: 1
+  Processors: 1
+VideoKqConsumerConf:
+  Name: video-kq-consumer
+  Brokers:
+    - xxxxxx:9092
+  Group: group-video-event
+  Topic: topic-video-event
+  Offset: last
+  Consumers: 1
+  Processors: 1
+Mysql:
+  Datasource: root:password@tcp(localhost:3306)/user?charset=utf8&parseTime=True&loc=Local
+BizRedis:
+  Host: xxxxxx:6379
+  Pass: xxxxxx
+  Type: node
+Elasticsearch:
+  Address:
+    - http://xxxxxxx:9200
+  Username: xxxxxx
+  Password: xxxxxx

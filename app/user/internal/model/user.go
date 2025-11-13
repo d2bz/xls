@@ -14,6 +14,16 @@ type User struct {
 	Avatar   string `gorm:"type:varchar(255);" json:"avatar"`
 }
 
+type UserModel struct {
+	db *gorm.DB
+}
+
+func NewUserModel(db *gorm.DB) *UserModel {
+	return &UserModel{
+		db: db,
+	}
+}
+
 func (*User) TableName() string {
 	return "user"
 }
@@ -38,4 +48,12 @@ func GetUserByEmail(db *gorm.DB, email string) (*User, error) {
 func (u *User) Insert(db *gorm.DB) error {
 	err := db.Create(u).Error
 	return err
+}
+
+func (um *UserModel) FindUserByID(id uint64) (*User, error) {
+	var user *User
+	if err := um.db.Where("id = ?", id).First(user).Error; err != nil {
+		return nil, err
+	}
+	return user, nil
 }

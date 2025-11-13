@@ -13,22 +13,22 @@ import (
 	"xls/app/video/mq/internal/svc"
 )
 
-type MqLogic struct {
+type LikeSyncMqLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-func NewMqLogic(ctx context.Context, svcCtx *svc.ServiceContext) *MqLogic {
-	return &MqLogic{
+func NewLikeSyncMqLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LikeSyncMqLogic {
+	return &LikeSyncMqLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *MqLogic) Consume(_ context.Context, _, val string) error {
-	var msg *types.CanalMsg
+func (l *LikeSyncMqLogic) Consume(_ context.Context, _, val string) error {
+	var msg *types.CanalLikeSyncMsg
 	err := json.Unmarshal([]byte(val), &msg)
 	if err != nil {
 		logx.Errorf("[v-like-sync]unmarshal msg: %+v err: %v", val, err)
@@ -62,6 +62,7 @@ func (l *MqLogic) Consume(_ context.Context, _, val string) error {
 
 func Consumers(ctx context.Context, svcCtx *svc.ServiceContext) []service.Service {
 	return []service.Service{
-		kq.MustNewQueue(svcCtx.Config.KqConsumerConf, NewMqLogic(ctx, svcCtx)),
+		kq.MustNewQueue(svcCtx.Config.LikeSyncKqConsumerConf, NewLikeSyncMqLogic(ctx, svcCtx)),
+		kq.MustNewQueue(svcCtx.Config.VideoKqConsumerConf, NewVideoMqLogic(ctx, svcCtx)),
 	}
 }
