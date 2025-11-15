@@ -9,7 +9,7 @@ import (
 
 func TestMysqlConn(t *testing.T) {
 	db, err := gorm.Open(mysql.Open(
-		"root:123456@tcp(localhost)/user?charset=utf8&parseTime=True&loc=Local",
+		"root:123456@tcp(localhost)/rpc?charset=utf8&parseTime=True&loc=Local",
 	), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("mysql connection failed: %v", err)

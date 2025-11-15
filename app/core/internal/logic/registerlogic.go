@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"xls/app/user/rpc/userclient"
 
+	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/redis"
 	"xls/app/core/internal/code"
 	"xls/app/core/internal/helper"
 	"xls/app/core/internal/svc"
 	"xls/app/core/internal/types"
-	"xls/app/user/userclient"
-
-	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stores/redis"
 )
 
 type RegisterLogic struct {

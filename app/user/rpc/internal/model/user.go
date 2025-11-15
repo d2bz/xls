@@ -25,7 +25,7 @@ func NewUserModel(db *gorm.DB) *UserModel {
 }
 
 func (*User) TableName() string {
-	return "user"
+	return "rpc"
 }
 
 func (u *User) ToString() (string, error) {

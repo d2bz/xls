@@ -2,12 +2,11 @@ package logic
 
 import (
 	"context"
-
-	"xls/app/user/internal/code"
-	"xls/app/user/internal/helper"
-	"xls/app/user/internal/model"
-	"xls/app/user/internal/svc"
-	"xls/app/user/user"
+	"xls/app/user/rpc/internal/code"
+	"xls/app/user/rpc/internal/helper"
+	"xls/app/user/rpc/internal/model"
+	"xls/app/user/rpc/internal/svc"
+	"xls/app/user/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -33,10 +32,10 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 	u := new(model.User)
 	userStr, err := l.svcCtx.BizRedis.Get(prefixUser + in.Email)
 	if err != nil {
-		l.Logger.Errorf("get user cache failed: %v", err)
+		l.Logger.Errorf("get rpc cache failed: %v", err)
 	}
 	if err = u.FromString(userStr); err != nil {
-		l.Logger.Errorf("failed to convert string to user: %v", err)
+		l.Logger.Errorf("failed to convert string to rpc: %v", err)
 	} else {
 		// redis不存在则查询数据库
 		db := l.svcCtx.MysqlDB
@@ -45,7 +44,7 @@ func (l *LoginLogic) Login(in *user.LoginRequest) (resp *user.LoginResponse, err
 			resp.Error = code.UserNotFound
 			return resp, nil
 		} else if err != nil {
-			l.Logger.Errorf("Get user by email failed: %v", err)
+			l.Logger.Errorf("Get rpc by email failed: %v", err)
 			resp.Error = code.FAILED
 			return resp, nil
 		}

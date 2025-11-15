@@ -2,7 +2,7 @@ package test
 
 import (
 	"testing"
-	"xls/app/user/internal/helper"
+	"xls/app/user/rpc/internal/helper"
 )
 
 func TestToken(t *testing.T) {

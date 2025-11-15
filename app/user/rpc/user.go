@@ -3,11 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-
-	"xls/app/user/internal/config"
-	"xls/app/user/internal/server"
-	"xls/app/user/internal/svc"
-	"xls/app/user/user"
+	"xls/app/user/rpc/internal/config"
+	"xls/app/user/rpc/internal/server"
+	"xls/app/user/rpc/internal/svc"
+	"xls/app/user/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"

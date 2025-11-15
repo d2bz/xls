@@ -34,7 +34,7 @@ func (l *FollowLogic) Follow(in *follow.FollowRequest) (*follow.FollowResponse, 
 	resp := new(follow.FollowResponse)
 	f, err := model.FollowFindByUserIDAndFollowedUserID(l.svcCtx.MysqlDB, in.UserID, in.FollowedUserID)
 	if err != nil {
-		l.Logger.Errorf("[Follow] find follow by user and followed user error: %v req: %v", err, in)
+		l.Logger.Errorf("[Follow] find follow by rpc and followed rpc error: %v req: %v", err, in)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
@@ -111,9 +111,9 @@ func (l *FollowLogic) Follow(in *follow.FollowRequest) (*follow.FollowResponse, 
 }
 
 func userFollowKey(userID uint64) string {
-	return fmt.Sprintf("user#follow#%v", userID)
+	return fmt.Sprintf("rpc#follow#%v", userID)
 }
 
 func userFansKey(userID uint64) string {
-	return fmt.Sprintf("user#fans#%v", userID)
+	return fmt.Sprintf("rpc#fans#%v", userID)
 }

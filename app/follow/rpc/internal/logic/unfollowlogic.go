@@ -32,7 +32,7 @@ func (l *UnFollowLogic) UnFollow(in *follow.UnFollowRequest) (*follow.UnFollowRe
 	resp := new(follow.UnFollowResponse)
 	f, err := model.FollowFindByUserIDAndFollowedUserID(l.svcCtx.MysqlDB, in.UserID, in.FollowedUserID)
 	if err != nil {
-		l.Logger.Errorf("[Unfollow] find follow by user and followed user error: %v", err)
+		l.Logger.Errorf("[Unfollow] find follow by rpc and followed rpc error: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}

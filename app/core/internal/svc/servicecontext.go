@@ -5,7 +5,7 @@ import (
 	"xls/app/core/internal/config"
 	"xls/app/follow/rpc/followclient"
 	"xls/app/like/rpc/likeclient"
-	"xls/app/user/userclient"
+	"xls/app/user/rpc/userclient"
 	"xls/app/video/rpc/video/videoclient"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"

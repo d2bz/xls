@@ -17,6 +17,12 @@ VideoKqConsumerConf:
   Offset: last
   Consumers: 1
   Processors: 1
+  UserRPC:
+    Etcd:
+      Hosts:
+        - 172.19.0.2:2379
+      Key: user.rpc
+    NonBlock: false
 Mysql:
   Datasource: root:password@tcp(localhost:3306)/user?charset=utf8&parseTime=True&loc=Local
 BizRedis:

@@ -568,27 +568,27 @@ func file_user_proto_rawDescGZIP() []byte {
 
 var file_user_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_user_proto_goTypes = []interface{}{
-	(*Error)(nil),            // 0: user.Error
-	(*Token)(nil),            // 1: user.Token
-	(*RegisterRequest)(nil),  // 2: user.RegisterRequest
-	(*RegisterResponse)(nil), // 3: user.RegisterResponse
-	(*LoginRequest)(nil),     // 4: user.LoginRequest
-	(*LoginResponse)(nil),    // 5: user.LoginResponse
-	(*UserInfoRequest)(nil),  // 6: user.UserInfoRequest
-	(*UserInfoResponse)(nil), // 7: user.UserInfoResponse
+	(*Error)(nil),            // 0: rpc.Error
+	(*Token)(nil),            // 1: rpc.Token
+	(*RegisterRequest)(nil),  // 2: rpc.RegisterRequest
+	(*RegisterResponse)(nil), // 3: rpc.RegisterResponse
+	(*LoginRequest)(nil),     // 4: rpc.LoginRequest
+	(*LoginResponse)(nil),    // 5: rpc.LoginResponse
+	(*UserInfoRequest)(nil),  // 6: rpc.UserInfoRequest
+	(*UserInfoResponse)(nil), // 7: rpc.UserInfoResponse
 }
 var file_user_proto_depIdxs = []int32{
-	0, // 0: user.RegisterResponse.error:type_name -> user.Error
-	1, // 1: user.RegisterResponse.token:type_name -> user.Token
-	0, // 2: user.LoginResponse.error:type_name -> user.Error
-	1, // 3: user.LoginResponse.token:type_name -> user.Token
-	0, // 4: user.UserInfoResponse.error:type_name -> user.Error
-	2, // 5: user.User.Register:input_type -> user.RegisterRequest
-	4, // 6: user.User.Login:input_type -> user.LoginRequest
-	6, // 7: user.User.UserInfo:input_type -> user.UserInfoRequest
-	3, // 8: user.User.Register:output_type -> user.RegisterResponse
-	5, // 9: user.User.Login:output_type -> user.LoginResponse
-	7, // 10: user.User.UserInfo:output_type -> user.UserInfoResponse
+	0, // 0: rpc.RegisterResponse.error:type_name -> rpc.Error
+	1, // 1: rpc.RegisterResponse.token:type_name -> rpc.Token
+	0, // 2: rpc.LoginResponse.error:type_name -> rpc.Error
+	1, // 3: rpc.LoginResponse.token:type_name -> rpc.Token
+	0, // 4: rpc.UserInfoResponse.error:type_name -> rpc.Error
+	2, // 5: rpc.User.Register:input_type -> rpc.RegisterRequest
+	4, // 6: rpc.User.Login:input_type -> rpc.LoginRequest
+	6, // 7: rpc.User.UserInfo:input_type -> rpc.UserInfoRequest
+	3, // 8: rpc.User.Register:output_type -> rpc.RegisterResponse
+	5, // 9: rpc.User.Login:output_type -> rpc.LoginResponse
+	7, // 10: rpc.User.UserInfo:output_type -> rpc.UserInfoResponse
 	8, // [8:11] is the sub-list for method output_type
 	5, // [5:8] is the sub-list for method input_type
 	5, // [5:5] is the sub-list for extension type_name

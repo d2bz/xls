@@ -1,8 +1,8 @@
 package svc
 
 import (
-	"xls/app/user/internal/config"
-	"xls/app/user/internal/model"
+	"xls/app/user/rpc/internal/config"
+	"xls/app/user/rpc/internal/model"
 
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"gorm.io/gorm"

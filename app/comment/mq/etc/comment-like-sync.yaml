@@ -9,7 +9,7 @@ KqConsumerConf:
   Consumers: 1
   Processors: 1
 Mysql:
-  Datasource: root:password@tcp(localhost:3306)/user?charset=utf8&parseTime=True&loc=Local
+  Datasource: root:password@tcp(localhost:3306)/rpc?charset=utf8&parseTime=True&loc=Local
 BizRedis:
   Host: xxxxxx:6379
   Pass: xxxxxx

@@ -1,6 +1,8 @@
 package code
 
-import "xls/app/user/user"
+import (
+	"xls/app/user/rpc/user"
+)
 
 var (
 	SUCCEED           = response(0, "成功")

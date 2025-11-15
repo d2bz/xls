@@ -29,7 +29,7 @@ func NewLikeSyncMqLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LikeSy
 
 func (l *LikeSyncMqLogic) Consume(_ context.Context, _, val string) error {
 	var msg *types.CanalLikeSyncMsg
-	err := json.Unmarshal([]byte(val), &msg)
+	err := json.Unmarshal([]byte(val), msg)
 	if err != nil {
 		logx.Errorf("[v-like-sync]unmarshal msg: %+v err: %v", val, err)
 		return err

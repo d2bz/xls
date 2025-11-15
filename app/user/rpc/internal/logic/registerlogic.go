@@ -2,18 +2,17 @@ package logic
 
 import (
 	"context"
-
-	"xls/app/user/internal/code"
-	"xls/app/user/internal/helper"
-	"xls/app/user/internal/model"
-	"xls/app/user/internal/svc"
-	"xls/app/user/user"
+	"xls/app/user/rpc/internal/code"
+	"xls/app/user/rpc/internal/helper"
+	"xls/app/user/rpc/internal/model"
+	"xls/app/user/rpc/internal/svc"
+	"xls/app/user/rpc/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
 const (
-	prefixUser = "user#"
+	prefixUser = "rpc#"
 	expireUser = 60 * 5 // 密码过期时间
 )
 
@@ -40,18 +39,18 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 		userResp.Error = code.UserAlreadyExists
 		return
 	} else if err != nil {
-		l.Logger.Errorf("Get user by email failed: %v", err)
+		l.Logger.Errorf("Get rpc by email failed: %v", err)
 		return
 	}
 
 	// 注册用户
 	u = &model.User{
 		Email:    in.Email,
-		Name:     "user-" + in.Email,
+		Name:     "rpc-" + in.Email,
 		Password: in.Password,
 	}
 	if err = u.Insert(db); err != nil {
-		l.Logger.Errorf("Insert user failed: %v", err)
+		l.Logger.Errorf("Insert rpc failed: %v", err)
 		userResp.Error = code.FAILED
 		return
 	}
@@ -73,10 +72,10 @@ func (l *RegisterLogic) Register(in *user.RegisterRequest) (userResp *user.Regis
 	if err == nil {
 		err = l.svcCtx.BizRedis.Setex(prefixUser+in.Email, userStr, expireUser)
 		if err != nil {
-			l.Logger.Errorf("set user cache failed: %v", err)
+			l.Logger.Errorf("set rpc cache failed: %v", err)
 		}
 	} else {
-		l.Logger.Errorf("failed to convert user to string: %v", err)
+		l.Logger.Errorf("failed to convert rpc to string: %v", err)
 	}
 
 	userResp = &user.RegisterResponse{
