@@ -26,10 +26,13 @@ message hotVideoListRequest {
 message videoItem {
   int32 videoID = 1;
   int32 authorID = 2;
-  string title = 3;
-  string url = 4;
-  int32 likeNum = 5;
-  int32 commentNum = 6;
+  string authorName = 3;
+  string authorAvatar = 4;
+  string title = 5;
+  string url = 6;
+  int32 likeNum = 7;
+  int32 commentNum = 8;
+  string createdAt = 9;
 }
 
 message hotVideoListResponse {
@@ -37,7 +40,20 @@ message hotVideoListResponse {
   repeated videoItem hotVideoList = 2;
 }
 
+message searchVideoRequest {
+  string keyword = 1;
+  int64 page = 2;
+  int64 size = 3;
+}
+
+message searchVideoResponse {
+  Error error = 1;
+  int64 total = 2;
+  repeated videoItem videos = 3;
+}
+
 service Video {
   rpc Publish(publishRequest) returns (publishResponse);
   rpc HotVideoList(hotVideoListRequest) returns (hotVideoListResponse);
+  rpc SearchVideo(searchVideoRequest) returns (searchVideoResponse);
 }

@@ -30,5 +30,10 @@ func (s *VideoServer) Publish(ctx context.Context, in *video.PublishRequest) (*v
 
 func (s *VideoServer) HotVideoList(ctx context.Context, in *video.HotVideoListRequest) (*video.HotVideoListResponse, error) {
 	l := logic.NewHotVideoListLogic(ctx, s.svcCtx)
-	return l.HotVideoList()
+	return l.HotVideoList(in)
+}
+
+func (s *VideoServer) SearchVideo(ctx context.Context, in *video.SearchVideoRequest) (*video.SearchVideoResponse, error) {
+	l := logic.NewSearchVideoLogic(ctx, s.svcCtx)
+	return l.SearchVideo(in)
 }

@@ -114,6 +114,18 @@ type RegisterResponse struct {
 	UserID int `json:"user_id"`
 }
 
+type SearchVideoRequest struct {
+	Keyword string `json:"keyword"`
+	Page    int64  `json:"page,optional"`
+	Size    int64  `json:"size,optional"`
+}
+
+type SearchVideoResponse struct {
+	Status
+	Total  int64       `json:"total"`
+	Videos []VideoItem `json:"videos"`
+}
+
 type Status struct {
 	StatusCode int    `json:"status_code"`
 	StatusMsg  string `json:"status_msg"`
@@ -149,10 +161,13 @@ type VerificationResponse struct {
 }
 
 type VideoItem struct {
-	VideoID    int32  `json:"video_id"`
-	AuthorID   int32  `json:"author_id"`
-	Title      string `json:"title"`
-	Url        string `json:"url"`
-	LikeNum    int32  `json:"like_num"`
-	CommentNum int32  `json:"comment_num"`
+	VideoID      int32  `json:"video_id"`
+	AuthorID     int32  `json:"author_id"`
+	AuthorName   string `json:"author_name"`
+	AuthorAvatar string `json:"author_avatar"`
+	Title        string `json:"title"`
+	Url          string `json:"url"`
+	LikeNum      int32  `json:"like_num"`
+	CommentNum   int32  `json:"comment_num"`
+	CreatedAt    string `json:"created_at"`
 }

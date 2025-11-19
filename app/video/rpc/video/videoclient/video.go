@@ -19,11 +19,14 @@ type (
 	HotVideoListResponse = video.HotVideoListResponse
 	PublishRequest       = video.PublishRequest
 	PublishResponse      = video.PublishResponse
+	SearchVideoRequest   = video.SearchVideoRequest
+	SearchVideoResponse  = video.SearchVideoResponse
 	VideoItem            = video.VideoItem
 
 	Video interface {
 		Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
 		HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error)
+		SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error)
 	}
 
 	defaultVideo struct {
@@ -45,4 +48,9 @@ func (m *defaultVideo) Publish(ctx context.Context, in *PublishRequest, opts ...
 func (m *defaultVideo) HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error) {
 	client := video.NewVideoClient(m.cli.Conn())
 	return client.HotVideoList(ctx, in, opts...)
+}
+
+func (m *defaultVideo) SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error) {
+	client := video.NewVideoClient(m.cli.Conn())
+	return client.SearchVideo(ctx, in, opts...)
 }

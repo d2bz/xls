@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type VideoClient interface {
 	Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
 	HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error)
+	SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error)
 }
 
 type videoClient struct {
@@ -52,12 +53,22 @@ func (c *videoClient) HotVideoList(ctx context.Context, in *HotVideoListRequest,
 	return out, nil
 }
 
+func (c *videoClient) SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error) {
+	out := new(SearchVideoResponse)
+	err := c.cc.Invoke(ctx, "/video.Video/SearchVideo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VideoServer is the server API for Video service.
 // All implementations must embed UnimplementedVideoServer
 // for forward compatibility
 type VideoServer interface {
 	Publish(context.Context, *PublishRequest) (*PublishResponse, error)
 	HotVideoList(context.Context, *HotVideoListRequest) (*HotVideoListResponse, error)
+	SearchVideo(context.Context, *SearchVideoRequest) (*SearchVideoResponse, error)
 	mustEmbedUnimplementedVideoServer()
 }
 
@@ -70,6 +81,9 @@ func (UnimplementedVideoServer) Publish(context.Context, *PublishRequest) (*Publ
 }
 func (UnimplementedVideoServer) HotVideoList(context.Context, *HotVideoListRequest) (*HotVideoListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HotVideoList not implemented")
+}
+func (UnimplementedVideoServer) SearchVideo(context.Context, *SearchVideoRequest) (*SearchVideoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchVideo not implemented")
 }
 func (UnimplementedVideoServer) mustEmbedUnimplementedVideoServer() {}
 
@@ -120,6 +134,24 @@ func _Video_HotVideoList_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Video_SearchVideo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchVideoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServer).SearchVideo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/video.Video/SearchVideo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServer).SearchVideo(ctx, req.(*SearchVideoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Video_ServiceDesc is the grpc.ServiceDesc for Video service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -134,6 +166,10 @@ var Video_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "HotVideoList",
 			Handler:    _Video_HotVideoList_Handler,
+		},
+		{
+			MethodName: "SearchVideo",
+			Handler:    _Video_SearchVideo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

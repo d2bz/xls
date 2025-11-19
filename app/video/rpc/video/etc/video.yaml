@@ -16,3 +16,8 @@ BizRedis:
   Host: xxxxxx:6379
   Pass: xxxxxx
   Type: node
+Elasticsearch:
+  Address:
+    - http://xxxxxxx:9200
+  Username: xxxxxx
+  Password: xxxxxx

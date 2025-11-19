@@ -37,16 +37,29 @@ type (
 	}
 	HotVideoListRequest  {}
 	VideoItem {
-		VideoID    int32  `json:"video_id"`
-		AuthorID   int32  `json:"author_id"`
-		Title      string `json:"title"`
-		Url        string `json:"url"`
-		LikeNum    int32  `json:"like_num"`
-		CommentNum int32  `json:"comment_num"`
+		VideoID      int32  `json:"video_id"`
+		AuthorID     int32  `json:"author_id"`
+		AuthorName   string `json:"author_name"`
+		AuthorAvatar string `json:"author_avatar"`
+		Title        string `json:"title"`
+		Url          string `json:"url"`
+		LikeNum      int32  `json:"like_num"`
+		CommentNum   int32  `json:"comment_num"`
+		CreatedAt    string `json:"created_at"`
 	}
 	HotVideoListResponse {
 		Status
 		VideoList []VideoItem `json:"video_list"`
+	}
+	SearchVideoRequest {
+		Keyword string `json:"keyword"`
+		Page    int64  `json:"page,optional"`
+		Size    int64  `json:"size,optional"`
+	}
+	SearchVideoResponse {
+		Status
+		Total  int64       `json:"total"`
+		Videos []VideoItem `json:"videos"`
 	}
 )
 
@@ -65,6 +78,9 @@ service core-api {
 
 	@handler HotVideoList
 	get /video/hotVideoList (HotVideoListRequest) returns (HotVideoListResponse)
+
+	@handler SearchVideo
+	get /video/searchVideo (SearchVideoRequest) returns (SearchVideoResponse)
 }
 
 type (

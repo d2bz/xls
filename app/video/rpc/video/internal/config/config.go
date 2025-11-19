@@ -7,9 +7,14 @@ import (
 
 type Config struct {
 	zrpc.RpcServerConf
-	LikeRPC  zrpc.RpcClientConf
-	Mysql    MysqlConf
-	BizRedis redis.RedisConf
+	LikeRPC       zrpc.RpcClientConf
+	Mysql         MysqlConf
+	BizRedis      redis.RedisConf
+	Elasticsearch struct {
+		Address  []string
+		Username string
+		Password string
+	}
 }
 
 type MysqlConf struct {

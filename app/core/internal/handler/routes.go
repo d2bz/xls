@@ -34,6 +34,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/video/hotVideoList",
 				Handler: HotVideoListHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/video/searchVideo",
+				Handler: SearchVideoHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/xls"),
 	)
