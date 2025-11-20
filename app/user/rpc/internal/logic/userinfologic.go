@@ -14,8 +14,6 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-const ()
-
 type UserInfoLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
@@ -78,5 +76,5 @@ func (l *UserInfoLogic) UserInfo(in *user.UserInfoRequest) (*user.UserInfoRespon
 }
 
 func UserInfoKey(userID uint64) string {
-	return fmt.Sprintf("rpc:info:%d", userID)
+	return fmt.Sprintf("user:info:%d", userID)
 }

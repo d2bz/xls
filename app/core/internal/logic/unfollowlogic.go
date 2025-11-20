@@ -53,5 +53,5 @@ func (l *UnFollowLogic) UnFollow(req *types.UnFollowRequest) (resp *types.UnFoll
 
 	resp.Status = code.SUCCEED
 
-	return
+	return resp, nil
 }

@@ -82,6 +82,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				Method:  http.MethodPost,
+				Path:    "/updateUser",
+				Handler: UpdateUserHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
 				Path:    "/upload",
 				Handler: UploadVideoHandler(serverCtx),
 			},

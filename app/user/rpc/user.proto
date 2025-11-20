@@ -49,9 +49,20 @@ message UserInfoResponse {
   string avatar = 5;
 }
 
+message UpdateUserRequest {
+  uint64 id = 1;
+  string name = 2;
+  string avatar = 3;
+}
+
+message UpdateUserResponse {
+  Error error = 1;
+}
+
 
 service User {
   rpc Register (RegisterRequest) returns (RegisterResponse);
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc UserInfo (UserInfoRequest) returns (UserInfoResponse);
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
 }

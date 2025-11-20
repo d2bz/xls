@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 
 	"gorm.io/gorm"
@@ -56,4 +57,9 @@ func (um *UserModel) FindUserByID(id uint64) (*User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (um *UserModel) UpdateFields(ctx context.Context, userID uint64, data map[string]any) error {
+	query := um.db.Model(&User{}).Where("id = ?", userID)
+	return query.Updates(data).Error
 }

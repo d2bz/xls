@@ -144,6 +144,15 @@ type UnFollowResponse struct {
 	Status
 }
 
+type UpdateUserRequest struct {
+	Name   string `json:"name"`
+	Avatar string `json:"avatar"`
+}
+
+type UpdateUserResponse struct {
+	Status
+}
+
 type UploadVideoRequest struct {
 }
 

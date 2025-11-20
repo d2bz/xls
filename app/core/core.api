@@ -161,6 +161,13 @@ type (
 		IsEnd      bool       `json:"is_end"`
 		LastFansID uint64     `json:"last_fans_id"`
 	}
+	UpdateUserRequest {
+		Name   string `json:"name"`
+		Avatar string `json:"avatar"`
+	}
+	UpdateUserResponse {
+		Status
+	}
 )
 
 @server (
@@ -191,5 +198,8 @@ service core-api {
 
 	@handler FansList
 	get /fansList (FansListRequest) returns (FansListResponse)
+
+	@handler UpdateUser
+	post /updateUser (UpdateUserRequest) returns (UpdateUserResponse)
 }
 
