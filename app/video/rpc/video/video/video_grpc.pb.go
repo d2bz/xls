@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VideoClient interface {
 	Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
-	HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error)
+	HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error)
 	SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error)
 }
 
@@ -44,8 +44,8 @@ func (c *videoClient) Publish(ctx context.Context, in *PublishRequest, opts ...g
 	return out, nil
 }
 
-func (c *videoClient) HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error) {
-	out := new(HotVideoListResponse)
+func (c *videoClient) HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error) {
+	out := new(GetVideoListResponse)
 	err := c.cc.Invoke(ctx, "/video.Video/HotVideoList", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (c *videoClient) SearchVideo(ctx context.Context, in *SearchVideoRequest, o
 // for forward compatibility
 type VideoServer interface {
 	Publish(context.Context, *PublishRequest) (*PublishResponse, error)
-	HotVideoList(context.Context, *HotVideoListRequest) (*HotVideoListResponse, error)
+	HotVideoList(context.Context, *GetVideoListRequest) (*GetVideoListResponse, error)
 	SearchVideo(context.Context, *SearchVideoRequest) (*SearchVideoResponse, error)
 	mustEmbedUnimplementedVideoServer()
 }
@@ -79,7 +79,7 @@ type UnimplementedVideoServer struct {
 func (UnimplementedVideoServer) Publish(context.Context, *PublishRequest) (*PublishResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
-func (UnimplementedVideoServer) HotVideoList(context.Context, *HotVideoListRequest) (*HotVideoListResponse, error) {
+func (UnimplementedVideoServer) HotVideoList(context.Context, *GetVideoListRequest) (*GetVideoListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HotVideoList not implemented")
 }
 func (UnimplementedVideoServer) SearchVideo(context.Context, *SearchVideoRequest) (*SearchVideoResponse, error) {
@@ -117,7 +117,7 @@ func _Video_Publish_Handler(srv interface{}, ctx context.Context, dec func(inter
 }
 
 func _Video_HotVideoList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HotVideoListRequest)
+	in := new(GetVideoListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func _Video_HotVideoList_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: "/video.Video/HotVideoList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VideoServer).HotVideoList(ctx, req.(*HotVideoListRequest))
+		return srv.(VideoServer).HotVideoList(ctx, req.(*GetVideoListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

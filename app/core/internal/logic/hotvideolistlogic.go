@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"xls/app/core/internal/code"
+	"xls/app/like/rpc/likeclient"
 	"xls/app/video/rpc/video/videoclient"
 
 	"xls/app/core/internal/svc"
@@ -28,7 +29,16 @@ func NewHotVideoListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HotV
 func (l *HotVideoListLogic) HotVideoList(req *types.HotVideoListRequest) (resp *types.HotVideoListResponse, err error) {
 	resp = new(types.HotVideoListResponse)
 
-	videoList, err := l.svcCtx.VideoRpc.HotVideoList(l.ctx, &videoclient.HotVideoListRequest{})
+	hotVideoIDs, err := l.svcCtx.LikeRpc.HotVideoIDList(l.ctx, &likeclient.HotVideoIDListRequest{})
+	if err != nil {
+		l.Logger.Errorf("[HotVideoListLogic] likeRpc.HotVideoIDList error: %v", err)
+		resp.Status = code.FAILED
+		return resp, nil
+	}
+
+	videoList, err := l.svcCtx.VideoRpc.HotVideoList(l.ctx, &videoclient.GetVideoListRequest{
+		VideoIDs: hotVideoIDs.VideoIDs,
+	})
 	if err != nil {
 		l.Logger.Errorf("HotVideoList rpc error:%v", err)
 		resp.Status = code.FAILED

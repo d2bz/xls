@@ -28,8 +28,8 @@ func (s *VideoServer) Publish(ctx context.Context, in *video.PublishRequest) (*v
 	return l.Publish(in)
 }
 
-func (s *VideoServer) HotVideoList(ctx context.Context, in *video.HotVideoListRequest) (*video.HotVideoListResponse, error) {
-	l := logic.NewHotVideoListLogic(ctx, s.svcCtx)
+func (s *VideoServer) HotVideoList(ctx context.Context, in *video.GetVideoListRequest) (*video.GetVideoListResponse, error) {
+	l := logic.NewGetVideoListLogic(ctx, s.svcCtx)
 	return l.HotVideoList(in)
 }
 

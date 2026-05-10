@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/zeromicro/go-zero/core/mr"
 	"strconv"
-	"xls/app/like/rpc/likeclient"
 	"xls/app/video/rpc/video/internal/code"
 	"xls/app/video/rpc/video/internal/model"
 
@@ -14,33 +13,26 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-type HotVideoListLogic struct {
+type GetVideoListLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
-func NewHotVideoListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HotVideoListLogic {
-	return &HotVideoListLogic{
+func NewGetVideoListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetVideoListLogic {
+	return &GetVideoListLogic{
 		ctx:    ctx,
 		svcCtx: svcCtx,
 		Logger: logx.WithContext(ctx),
 	}
 }
 
-func (l *HotVideoListLogic) HotVideoList() (*video.HotVideoListResponse, error) {
-	resp := new(video.HotVideoListResponse)
+func (l *GetVideoListLogic) HotVideoList(in *video.GetVideoListRequest) (*video.GetVideoListResponse, error) {
+	resp := new(video.GetVideoListResponse)
 
-	videoIDList, err := l.svcCtx.LikeRPC.HotVideoIDList(l.ctx, &likeclient.HotVideoIDListRequest{})
+	videos, err := l.videoListByIDs(in.VideoIDs)
 	if err != nil {
-		l.Logger.Errorf("[HotVideoList] likeRPC.HotVideoIDList error: %v", err)
-		resp.Error = code.FAILED
-		return resp, nil
-	}
-
-	videos, err := l.videoListByIDs(videoIDList.VideoIDs)
-	if err != nil {
-		l.Logger.Errorf("[HotVideoList] videoListByIDs error: %v", err)
+		l.Logger.Errorf("[GetVideoList] videoListByIDs error: %v", err)
 		resp.Error = code.FAILED
 		return resp, nil
 	}
@@ -62,7 +54,7 @@ func (l *HotVideoListLogic) HotVideoList() (*video.HotVideoListResponse, error) 
 	return resp, nil
 }
 
-func (l *HotVideoListLogic) videoListByIDs(videoIDList []string) ([]*model.Video, error) {
+func (l *GetVideoListLogic) videoListByIDs(videoIDList []string) ([]*model.Video, error) {
 	videos, err := mr.MapReduce[string, *model.Video, []*model.Video](func(source chan<- string) {
 		for _, videoID := range videoIDList {
 			source <- videoID

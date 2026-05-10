@@ -15,8 +15,8 @@ import (
 
 type (
 	Error                = video.Error
-	HotVideoListRequest  = video.HotVideoListRequest
-	HotVideoListResponse = video.HotVideoListResponse
+	GetVideoListRequest  = video.GetVideoListRequest
+	GetVideoListResponse = video.GetVideoListResponse
 	PublishRequest       = video.PublishRequest
 	PublishResponse      = video.PublishResponse
 	SearchVideoRequest   = video.SearchVideoRequest
@@ -25,7 +25,7 @@ type (
 
 	Video interface {
 		Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
-		HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error)
+		HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error)
 		SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error)
 	}
 
@@ -45,7 +45,7 @@ func (m *defaultVideo) Publish(ctx context.Context, in *PublishRequest, opts ...
 	return client.Publish(ctx, in, opts...)
 }
 
-func (m *defaultVideo) HotVideoList(ctx context.Context, in *HotVideoListRequest, opts ...grpc.CallOption) (*HotVideoListResponse, error) {
+func (m *defaultVideo) HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error) {
 	client := video.NewVideoClient(m.cli.Conn())
 	return client.HotVideoList(ctx, in, opts...)
 }

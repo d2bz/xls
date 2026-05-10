@@ -20,7 +20,8 @@ message publishResponse {
   int32 videoID = 2;
 }
 
-message hotVideoListRequest {
+message getVideoListRequest {
+  repeated string videoIDs = 1;
 }
 
 message videoItem {
@@ -35,7 +36,7 @@ message videoItem {
   string createdAt = 9;
 }
 
-message hotVideoListResponse {
+message getVideoListResponse {
   Error error = 1;
   repeated videoItem hotVideoList = 2;
 }
@@ -54,6 +55,6 @@ message searchVideoResponse {
 
 service Video {
   rpc Publish(publishRequest) returns (publishResponse);
-  rpc HotVideoList(hotVideoListRequest) returns (hotVideoListResponse);
+  rpc HotVideoList(getVideoListRequest) returns (getVideoListResponse);
   rpc SearchVideo(searchVideoRequest) returns (searchVideoResponse);
 }
