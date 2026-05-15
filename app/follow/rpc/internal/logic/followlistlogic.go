@@ -2,9 +2,10 @@ package logic
 
 import (
 	"context"
-	"github.com/zeromicro/go-zero/core/threading"
 	"strconv"
 	"time"
+
+	"github.com/zeromicro/go-zero/core/threading"
 	"xls/app/follow/rpc/internal/code"
 	"xls/app/follow/rpc/internal/model"
 	"xls/app/follow/rpc/internal/types"
@@ -61,7 +62,7 @@ func (l *FollowListLogic) FollowList(in *follow.FollowListRequest) (*follow.Foll
 	followedUserIDsFromCache, _ := l.cacheFollowedUserIDs(l.ctx, in.UserID, in.Cursor, in.PageSize)
 	if len(followedUserIDsFromCache) > 0 {
 		isCache = true
-		if followedUserIDsFromCache[len(followedUserIDsFromCache)-1] == -1 {
+		if followedUserIDsFromCache[len(followedUserIDsFromCache)-1] == cacheEndSentinel {
 			followedUserIDsFromCache = followedUserIDsFromCache[:len(followedUserIDsFromCache)-1]
 			isEnd = true
 		}
@@ -172,7 +173,7 @@ func (l *FollowListLogic) FollowList(in *follow.FollowListRequest) (*follow.Foll
 	if !isCache {
 		threading.GoSafe(func() {
 			if len(follows) < types.CacheMaxFollowCount && len(follows) > 0 {
-				follows = append(follows, &model.Follow{FollowedUserID: -1})
+				follows = append(follows, &model.Follow{FollowedUserID: cacheEndSentinel})
 			}
 			err = l.addCacheFollow(context.Background(), in.UserID, follows)
 			if err != nil {
@@ -222,7 +223,7 @@ func (l *FollowListLogic) addCacheFollow(ctx context.Context, userID uint64, fol
 	key := userFollowKey(userID)
 	for _, followItem := range follows {
 		var score int64
-		if followItem.FollowedUserID == -1 {
+		if followItem.FollowedUserID == cacheEndSentinel {
 			score = 0
 		} else {
 			score = followItem.CreatedAt.Unix()

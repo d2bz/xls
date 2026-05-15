@@ -22,6 +22,7 @@ func main() {
 
 	svcCtx := svc.NewServiceContext(c)
 	ctx := context.Background()
+	defer svcCtx.Milvus.Close(ctx)
 	serviceGroup := service.NewServiceGroup()
 	defer serviceGroup.Stop()
 

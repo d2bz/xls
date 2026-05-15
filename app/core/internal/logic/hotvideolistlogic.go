@@ -36,11 +36,11 @@ func (l *HotVideoListLogic) HotVideoList(req *types.HotVideoListRequest) (resp *
 		return resp, nil
 	}
 
-	videoList, err := l.svcCtx.VideoRpc.HotVideoList(l.ctx, &videoclient.GetVideoListRequest{
+	videoList, err := l.svcCtx.VideoRpc.GetVideoList(l.ctx, &videoclient.GetVideoListRequest{
 		VideoIDs: hotVideoIDs.VideoIDs,
 	})
 	if err != nil {
-		l.Logger.Errorf("HotVideoList rpc error:%v", err)
+		l.Logger.Errorf("GetVideoList rpc error:%v", err)
 		resp.Status = code.FAILED
 		return resp, nil
 	}

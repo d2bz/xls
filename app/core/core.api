@@ -76,7 +76,7 @@ service core-api {
 	@handler Verification
 	post /verification (VerificationRequest) returns (VerificationResponse)
 
-	@handler HotVideoList
+	@handler GetVideoList
 	get /video/hotVideoList (HotVideoListRequest) returns (HotVideoListResponse)
 
 	@handler SearchVideo

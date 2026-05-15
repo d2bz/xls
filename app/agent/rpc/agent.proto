@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+package agentpb;
+option go_package = "./agent";
+
+// 基础服务定义
+service Agent {
+  // 健康检查
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+  // 对话
+  rpc Chat(ChatRequest) returns (ChatResponse);
+  // 列出用户所有会话
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  // 删除会话
+  rpc DeleteSession(DeleteSessionRequest) returns (DeleteSessionResponse);
+}
+
+// 健康检查请求
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  string time = 2;
+}
+
+// 对话请求
+message ChatRequest {
+  uint64 user_id    = 1;
+  string query      = 2;
+  string session_id = 3;
+
+  // 精确参数：前端直接传递，避免 LLM 解析歧义
+  int64 video_id   = 4;
+  string keyword   = 5;
+  int64 page       = 6;
+  int64 page_size  = 7;
+}
+
+// 对话响应
+message ChatResponse {
+  int32  status_code = 1;
+  string status_msg  = 2;
+  string answer      = 3;
+  string session_id  = 4;
+
+  // 结构化视频数据（由工作流执行结果填充）
+  repeated VideoItem videos = 5;
+  int64             total   = 6;
+}
+
+// 视频卡片（与 video.proto 保持字段兼容）
+message VideoItem {
+  int32  videoID       = 1;
+  int32  authorID      = 2;
+  string authorName    = 3;
+  string authorAvatar  = 4;
+  string title        = 5;
+  string url          = 6;
+  int32  likeNum      = 7;
+  int32  commentNum   = 8;
+  string createdAt    = 9;
+  repeated string tags = 10;
+}
+
+// 列出会话请求
+message ListSessionsRequest {
+  uint64 user_id = 1;
+}
+
+// 列出会话响应
+message ListSessionsResponse {
+  int32 status_code = 1;
+  string status_msg = 2;
+  repeated SessionMeta sessions = 3;
+}
+
+// 会话摘要
+message SessionMeta {
+  uint64 id = 1;
+  string uuid = 2;
+  string title = 3;
+  uint64 user_id = 4;
+  int64 created_at = 5;
+}
+
+// 删除会话请求
+message DeleteSessionRequest {
+  string session_uuid = 1;
+  uint64 user_id = 2;
+}
+
+// 删除会话响应
+message DeleteSessionResponse {
+  int32 status_code = 1;
+  string status_msg = 2;
+}

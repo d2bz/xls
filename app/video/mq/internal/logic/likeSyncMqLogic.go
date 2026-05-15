@@ -64,5 +64,6 @@ func Consumers(ctx context.Context, svcCtx *svc.ServiceContext) []service.Servic
 	return []service.Service{
 		kq.MustNewQueue(svcCtx.Config.LikeSyncKqConsumerConf, NewLikeSyncMqLogic(ctx, svcCtx)),
 		kq.MustNewQueue(svcCtx.Config.VideoKqConsumerConf, NewVideoMqLogic(ctx, svcCtx)),
+		kq.MustNewQueue(svcCtx.Config.TagKqConsumerConf, NewTagMqLogic(ctx, svcCtx)),
 	}
 }

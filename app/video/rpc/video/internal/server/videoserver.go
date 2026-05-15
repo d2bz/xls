@@ -28,12 +28,17 @@ func (s *VideoServer) Publish(ctx context.Context, in *video.PublishRequest) (*v
 	return l.Publish(in)
 }
 
-func (s *VideoServer) HotVideoList(ctx context.Context, in *video.GetVideoListRequest) (*video.GetVideoListResponse, error) {
+func (s *VideoServer) GetVideoList(ctx context.Context, in *video.GetVideoListRequest) (*video.GetVideoListResponse, error) {
 	l := logic.NewGetVideoListLogic(ctx, s.svcCtx)
-	return l.HotVideoList(in)
+	return l.GetVideoList(in)
 }
 
 func (s *VideoServer) SearchVideo(ctx context.Context, in *video.SearchVideoRequest) (*video.SearchVideoResponse, error) {
 	l := logic.NewSearchVideoLogic(ctx, s.svcCtx)
 	return l.SearchVideo(in)
+}
+
+func (s *VideoServer) GetVideosByDimensions(ctx context.Context, in *video.GetVideosByDimensionsRequest) (*video.GetVideosByDimensionsResponse, error) {
+	l := logic.NewGetVideosByDimensionsLogic(ctx, s.svcCtx)
+	return l.GetVideosByDimensions(in)
 }

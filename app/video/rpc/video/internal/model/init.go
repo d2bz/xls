@@ -20,6 +20,7 @@ func InitMysql(dataSource string) *gorm.DB {
 func autoMigrate(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&Video{},
+		&Tag{},
 	)
 	if err != nil {
 		panic("failed to auto migrate database")

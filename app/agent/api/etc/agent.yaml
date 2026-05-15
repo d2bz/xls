@@ -1,0 +1,12 @@
+Name: agent
+Host: 0.0.0.0
+Port: 8888
+JwtAuth:
+  AccessSecret: your-secret-key
+  AccessExpire: 86400
+AgentRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: agent.rpc
+  NonBlock: true

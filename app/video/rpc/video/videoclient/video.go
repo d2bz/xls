@@ -14,19 +14,27 @@ import (
 )
 
 type (
-	Error                = video.Error
-	GetVideoListRequest  = video.GetVideoListRequest
-	GetVideoListResponse = video.GetVideoListResponse
-	PublishRequest       = video.PublishRequest
-	PublishResponse      = video.PublishResponse
-	SearchVideoRequest   = video.SearchVideoRequest
-	SearchVideoResponse  = video.SearchVideoResponse
-	VideoItem            = video.VideoItem
+	Dimension                     = video.Dimension
+	Error                         = video.Error
+	GetVideoListRequest           = video.GetVideoListRequest
+	GetVideoListResponse          = video.GetVideoListResponse
+	GetVideosByDimensionsRequest  = video.GetVideosByDimensionsRequest
+	GetVideosByDimensionsResponse = video.GetVideosByDimensionsResponse
+	GetVideosByTagRequest         = video.GetVideosByTagRequest
+	GetVideosByTagResponse        = video.GetVideosByTagResponse
+	GetVideosByTagsRequest        = video.GetVideosByTagsRequest
+	GetVideosByTagsResponse       = video.GetVideosByTagsResponse
+	PublishRequest                = video.PublishRequest
+	PublishResponse               = video.PublishResponse
+	SearchVideoRequest            = video.SearchVideoRequest
+	SearchVideoResponse           = video.SearchVideoResponse
+	VideoItem                     = video.VideoItem
 
 	Video interface {
 		Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
-		HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error)
+		GetVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error)
 		SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error)
+		GetVideosByDimensions(ctx context.Context, in *GetVideosByDimensionsRequest, opts ...grpc.CallOption) (*GetVideosByDimensionsResponse, error)
 	}
 
 	defaultVideo struct {
@@ -45,12 +53,17 @@ func (m *defaultVideo) Publish(ctx context.Context, in *PublishRequest, opts ...
 	return client.Publish(ctx, in, opts...)
 }
 
-func (m *defaultVideo) HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error) {
+func (m *defaultVideo) GetVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error) {
 	client := video.NewVideoClient(m.cli.Conn())
-	return client.HotVideoList(ctx, in, opts...)
+	return client.GetVideoList(ctx, in, opts...)
 }
 
 func (m *defaultVideo) SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error) {
 	client := video.NewVideoClient(m.cli.Conn())
 	return client.SearchVideo(ctx, in, opts...)
+}
+
+func (m *defaultVideo) GetVideosByDimensions(ctx context.Context, in *GetVideosByDimensionsRequest, opts ...grpc.CallOption) (*GetVideosByDimensionsResponse, error) {
+	client := video.NewVideoClient(m.cli.Conn())
+	return client.GetVideosByDimensions(ctx, in, opts...)
 }

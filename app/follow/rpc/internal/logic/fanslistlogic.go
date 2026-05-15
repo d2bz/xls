@@ -2,9 +2,11 @@ package logic
 
 import (
 	"context"
-	"github.com/zeromicro/go-zero/core/threading"
+	"math"
 	"strconv"
 	"time"
+
+	"github.com/zeromicro/go-zero/core/threading"
 	"xls/app/follow/rpc/internal/code"
 	"xls/app/follow/rpc/internal/model"
 	"xls/app/follow/rpc/internal/types"
@@ -16,6 +18,7 @@ import (
 )
 
 const userFansExpireTime = 3600 * 24 * 2
+const cacheEndSentinel uint64 = math.MaxUint64
 
 type FansListLogic struct {
 	ctx    context.Context
@@ -61,7 +64,7 @@ func (l *FansListLogic) FansList(in *follow.FansListRequest) (*follow.FansListRe
 	fansIDs, createTimes, _ := l.cacheFansUserIDs(l.ctx, in.UserID, in.Cursor, in.PageSize)
 	if len(fansIDs) > 0 {
 		isCache = true
-		if fansIDs[len(fansIDs)-1] == -1 {
+		if fansIDs[len(fansIDs)-1] == cacheEndSentinel {
 			fansIDs = fansIDs[:len(fansIDs)-1]
 			isEnd = true
 		}
@@ -162,7 +165,7 @@ func (l *FansListLogic) FansList(in *follow.FansListRequest) (*follow.FansListRe
 	if !isCache {
 		threading.GoSafe(func() {
 			if len(fansModel) < types.CacheMaxFansCount && len(fansModel) > 0 {
-				fansModel = append(fansModel, &model.Follow{UserID: -1})
+				fansModel = append(fansModel, &model.Follow{UserID: cacheEndSentinel})
 			}
 			err = l.addCacheFans(context.Background(), in.UserID, fansModel)
 			if err != nil {
@@ -212,7 +215,7 @@ func (l *FansListLogic) addCacheFans(ctx context.Context, userID uint64, fans []
 	key := userFansKey(userID)
 	for _, fan := range fans {
 		var score int64
-		if fan.UserID == -1 {
+		if fan.UserID == cacheEndSentinel {
 			score = 0
 		} else {
 			score = fan.CreatedAt.Unix()

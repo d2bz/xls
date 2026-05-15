@@ -1,0 +1,27 @@
+syntax = "v1"
+
+info (
+	title:   "Demo Service API"
+	desc:    "GoZero项目基础模板"
+	version: "1.0.0"
+)
+
+type (
+	// 健康检查请求
+	HealthCheckReq  {}
+	// 健康检查响应
+	HealthCheckResp {
+		Status string `json:"status"`
+		Time   string `json:"time"`
+	}
+)
+
+@server (
+	jwt: JwtAuth
+)
+service agent {
+	@doc "服务健康检查"
+	@handler healthCheck
+	get /health (HealthCheckReq) returns (HealthCheckResp)
+}
+

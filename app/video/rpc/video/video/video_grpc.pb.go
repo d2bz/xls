@@ -23,8 +23,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VideoClient interface {
 	Publish(ctx context.Context, in *PublishRequest, opts ...grpc.CallOption) (*PublishResponse, error)
-	HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error)
+	GetVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error)
 	SearchVideo(ctx context.Context, in *SearchVideoRequest, opts ...grpc.CallOption) (*SearchVideoResponse, error)
+	GetVideosByDimensions(ctx context.Context, in *GetVideosByDimensionsRequest, opts ...grpc.CallOption) (*GetVideosByDimensionsResponse, error)
 }
 
 type videoClient struct {
@@ -44,9 +45,9 @@ func (c *videoClient) Publish(ctx context.Context, in *PublishRequest, opts ...g
 	return out, nil
 }
 
-func (c *videoClient) HotVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error) {
+func (c *videoClient) GetVideoList(ctx context.Context, in *GetVideoListRequest, opts ...grpc.CallOption) (*GetVideoListResponse, error) {
 	out := new(GetVideoListResponse)
-	err := c.cc.Invoke(ctx, "/video.Video/HotVideoList", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/video.Video/GetVideoList", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +63,23 @@ func (c *videoClient) SearchVideo(ctx context.Context, in *SearchVideoRequest, o
 	return out, nil
 }
 
+func (c *videoClient) GetVideosByDimensions(ctx context.Context, in *GetVideosByDimensionsRequest, opts ...grpc.CallOption) (*GetVideosByDimensionsResponse, error) {
+	out := new(GetVideosByDimensionsResponse)
+	err := c.cc.Invoke(ctx, "/video.Video/GetVideosByDimensions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VideoServer is the server API for Video service.
 // All implementations must embed UnimplementedVideoServer
 // for forward compatibility
 type VideoServer interface {
 	Publish(context.Context, *PublishRequest) (*PublishResponse, error)
-	HotVideoList(context.Context, *GetVideoListRequest) (*GetVideoListResponse, error)
+	GetVideoList(context.Context, *GetVideoListRequest) (*GetVideoListResponse, error)
 	SearchVideo(context.Context, *SearchVideoRequest) (*SearchVideoResponse, error)
+	GetVideosByDimensions(context.Context, *GetVideosByDimensionsRequest) (*GetVideosByDimensionsResponse, error)
 	mustEmbedUnimplementedVideoServer()
 }
 
@@ -79,11 +90,14 @@ type UnimplementedVideoServer struct {
 func (UnimplementedVideoServer) Publish(context.Context, *PublishRequest) (*PublishResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
 }
-func (UnimplementedVideoServer) HotVideoList(context.Context, *GetVideoListRequest) (*GetVideoListResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HotVideoList not implemented")
+func (UnimplementedVideoServer) GetVideoList(context.Context, *GetVideoListRequest) (*GetVideoListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVideoList not implemented")
 }
 func (UnimplementedVideoServer) SearchVideo(context.Context, *SearchVideoRequest) (*SearchVideoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SearchVideo not implemented")
+}
+func (UnimplementedVideoServer) GetVideosByDimensions(context.Context, *GetVideosByDimensionsRequest) (*GetVideosByDimensionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVideosByDimensions not implemented")
 }
 func (UnimplementedVideoServer) mustEmbedUnimplementedVideoServer() {}
 
@@ -116,20 +130,20 @@ func _Video_Publish_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Video_HotVideoList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Video_GetVideoList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVideoListRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VideoServer).HotVideoList(ctx, in)
+		return srv.(VideoServer).GetVideoList(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/video.Video/HotVideoList",
+		FullMethod: "/video.Video/GetVideoList",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VideoServer).HotVideoList(ctx, req.(*GetVideoListRequest))
+		return srv.(VideoServer).GetVideoList(ctx, req.(*GetVideoListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -152,6 +166,24 @@ func _Video_SearchVideo_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Video_GetVideosByDimensions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVideosByDimensionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VideoServer).GetVideosByDimensions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/video.Video/GetVideosByDimensions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VideoServer).GetVideosByDimensions(ctx, req.(*GetVideosByDimensionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Video_ServiceDesc is the grpc.ServiceDesc for Video service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -164,12 +196,16 @@ var Video_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Video_Publish_Handler,
 		},
 		{
-			MethodName: "HotVideoList",
-			Handler:    _Video_HotVideoList_Handler,
+			MethodName: "GetVideoList",
+			Handler:    _Video_GetVideoList_Handler,
 		},
 		{
 			MethodName: "SearchVideo",
 			Handler:    _Video_SearchVideo_Handler,
+		},
+		{
+			MethodName: "GetVideosByDimensions",
+			Handler:    _Video_GetVideosByDimensions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

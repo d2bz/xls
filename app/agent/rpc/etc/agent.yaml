@@ -1,0 +1,78 @@
+Name: agent.rpc
+ListenOn: 0.0.0.0:8080
+Etcd:
+  Hosts:
+  - 127.0.0.1:2379
+  Key: agent.rpc
+UserRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+  NonBlock: true
+VideoRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: video.rpc
+  NonBlock: true
+LikeRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: like.rpc
+  NonBlock: true
+FollowRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: follow.rpc
+  NonBlock: true
+CommentRPC:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: comment.rpc
+    NonBlock: true
+Milvus:
+  Address: localhost:19530
+  Collection: tag_vectors
+  SearchTopK: 10
+  SearchNProbe: 10
+Agent:
+  Model:
+    Type: ark
+    Ark:
+      APIKey: ""
+      Model: ""
+      BaseURL: https://ark.cn-beijing.volces.com/api/v3
+      Region: cn-beijing
+  Session:
+    Type: mysql
+    MaxHistory: 50
+    MySQL:
+      DSN: root:password@tcp(localhost:3306)/xls?charset=utf8mb4&parseTime=True&loc=Local
+      MaxIdleConns: 10
+      MaxOpenConns: 100
+  Skill:
+    Dir: ""
+  MaxIter: 20
+  Middleware:
+    Summarization:
+      Enabled: false
+      TriggerTokens: 80000
+      TriggerMessages: 0
+      PreserveTokens: 26666
+      TranscriptPath: ""
+      Instruction: ""
+    Reduction:
+      Enabled: false
+      MaxLengthTrunc: 50000
+      MaxTokensClear: 160000
+      RootDir: /tmp
+  VideoMCP:
+    Enabled: false
+    Transport: stdio  # "stdio" or "sse"
+    Address: ""       # SSE 模式下 MCP 服务器地址，如 "http://localhost:3001/sse"
+    APIKey: ""        # DashScope API Key，stdio 模式通过环境变量传递
+    ToolFilters: []   # 只加载指定工具，如 ["analyze_video", "summarize_video"]，空表示全部
