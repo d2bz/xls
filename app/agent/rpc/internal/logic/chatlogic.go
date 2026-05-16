@@ -2,8 +2,6 @@ package logic
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"xls/app/agent/rpc/agent"
 	"xls/app/agent/rpc/internal/agentcore"
@@ -53,17 +51,15 @@ func (l *ChatLogic) Chat(in *agent.ChatRequest) (*agent.ChatResponse, error) {
 		return resp, nil
 	}
 
-	// 2. 注入请求参数到 Query 字符串前缀
-	// Supervisor 会解析前缀并存入 State，后续节点通过 ProcessState 读取
-	queryWithParams := agentcore.BuildQueryWithParams(in.Query, in.VideoId, in.Keyword, in.Page, in.PageSize, in.UserId)
-
-	// 3. 追加用户消息到 Session（先写入，保证持久化）
-	userMsg := schema.UserMessage(queryWithParams)
+	// 2. 追加用户消息到 Session（先写入，保证持久化）
+	// 注意：写入 Session 历史的是纯 query，精确参数由 ChatRequest 字段传入
+	// 参数通过 routerGraphTool.InvokableRun 的 params 传递给 Graph
+	userMsg := schema.UserMessage(in.Query)
 	if err := store.Append(l.ctx, session.ID, userMsg); err != nil {
 		logx.Errorf("[Chat] append user message error: %v", err)
 	}
 
-	// 4. 读取完整历史消息
+	// 3. 读取完整历史消息
 	history, err := store.GetMessages(l.ctx, session.ID)
 	if err != nil {
 		logx.Errorf("[Chat] get messages error: %v", err)
@@ -76,13 +72,15 @@ func (l *ChatLogic) Chat(in *agent.ChatRequest) (*agent.ChatResponse, error) {
 	logx.Infof("[Chat] session=%s, history_count=%d, query=%s",
 		session.UUID, len(history), in.Query)
 
-	// 5. 截断过长历史，控制 token 消耗
+	// 4. 截断过长历史，控制 token 消耗
 	maxHistory := 50
 	if len(history) > maxHistory {
 		history = history[len(history)-maxHistory:]
 	}
 
-	// 6. 调用 Agent（多轮）
+	// 5. 调用 Agent（多轮）
+	// Agent 内部会调用 routerGraphTool，tool 的 params 包含 ChatRequest 中的所有精确参数
+	// 这些参数通过 routerGraphTool.InvokableRun → graph.Invoke(*RouterInput) 传递给 Graph
 	events := runner.Run(l.ctx, history)
 	answer, err := agentcore.ExtractTextFromEvents(events)
 	if err != nil {
@@ -94,7 +92,7 @@ func (l *ChatLogic) Chat(in *agent.ChatRequest) (*agent.ChatResponse, error) {
 		return resp, nil
 	}
 
-	// 7. 追加助手回复到 Session
+	// 6. 追加助手回复到 Session
 	assistantMsg := schema.AssistantMessage(answer, nil)
 	if err := store.Append(l.ctx, session.ID, assistantMsg); err != nil {
 		logx.Errorf("[Chat] append assistant message error: %v", err)
@@ -105,8 +103,8 @@ func (l *ChatLogic) Chat(in *agent.ChatRequest) (*agent.ChatResponse, error) {
 	resp.Answer = answer
 	resp.SessionId = session.UUID
 
-	// 8. 填充结构化数据
-	agentcore.FillStructuredResponse(session.UUID, store, resp)
+	// 7. 填充结构化数据
+	agentcore.FillStructuredResponse(session.ID, store, resp)
 
 	return resp, nil
 }

@@ -1,6 +1,56 @@
 package workflows
 
-import "strings"
+import (
+	"github.com/cloudwego/eino/schema"
+	"xls/app/agent/rpc/agent"
+)
+
+// VideoItem 是工作流返回视频列表时的单个视频项。
+// 字段与 proto agent.VideoItem 对齐。
+type VideoItem = agent.VideoItem
+
+// WorkflowResult 是所有工作流的统一返回类型。
+//
+// Intent 决定了 ResultType 的填充方式：
+//   - recommend / recommend_semantic / video_search → ResultType=VideoList, Videos 填充
+//   - video_analysis / complex_analysis / general   → ResultType=Text, Text 填充
+//   - user_relation                                 → ResultType=Text, Text 填充
+//   - fallback                                      → ResultType=Text, Text 填充
+type WorkflowResult struct {
+	ResultType ResultType   `json:"resultType"`
+	Text       string       `json:"text,omitempty"`       // 友好的 AI 回复文本
+	Videos     []*VideoItem `json:"videos,omitempty"`     // 视频列表（推荐/搜索类）
+	Total      int64        `json:"total,omitempty"`     // 总数
+}
+
+// ResultType 标识工作流返回结果的类型，供调用方（Router / Agent）决定展示方式。
+type ResultType string
+
+const (
+	ResultTypeVideoList ResultType = "video_list" // 包含视频列表，前端渲染卡片
+	ResultTypeText      ResultType = "text"       // 纯文本回复（分析/闲聊）
+	ResultTypeError     ResultType = "error"      // 错误
+)
+
+// VideoInfoToItems 将 []VideoInfo（工具 JSON 解析结果）转换为 []*VideoItem（proto 类型）。
+func VideoInfoToItems(infos []VideoInfo) []*VideoItem {
+	if len(infos) == 0 {
+		return nil
+	}
+	items := make([]*VideoItem, 0, len(infos))
+	for _, info := range infos {
+		items = append(items, &VideoItem{
+			VideoID:     int32(info.ID),
+			AuthorID:    int32(info.AuthorID),
+			AuthorName:  info.AuthorName,
+			Title:       info.Title,
+			LikeNum:     int32(info.LikeCount),
+			CreatedAt:   info.CreateTime,
+			Tags:        info.Tags,
+		})
+	}
+	return items
+}
 
 type Intent string
 
@@ -10,12 +60,10 @@ const (
 	IntentUserRelation      Intent = "user_relation"
 	IntentRecommend         Intent = "recommend"
 	IntentRecommendSemantic Intent = "recommend_semantic"
-	IntentComplexAnalysis  Intent = "complex_analysis"
+	IntentComplexAnalysis   Intent = "complex_analysis"
 	IntentGeneral          Intent = "general"
-	IntentFallback         Intent = "fallback"
-	// IntentSimple 合并了 video_search、recommend、user_relation 三个简单意图，
-	// 统一由 ReAct 工作流处理。supervisor 仍按原意图分类，分支处统一路由到 simple_task。
-	IntentSimple Intent = "simple"
+	IntentFallback          Intent = "fallback"
+	IntentSimple           Intent = "simple"
 )
 
 type SemanticDim struct {
@@ -25,15 +73,15 @@ type SemanticDim struct {
 }
 
 type TaskSlot struct {
-	Keyword   string          `json:"keyword,omitempty"`
-	Sort      string          `json:"sort,omitempty"`
-	Limit     int             `json:"limit,omitempty"`
-	Page      int             `json:"page,omitempty"`
-	UserID    uint64          `json:"user_id,omitempty"`
-	VideoID   uint64          `json:"video_id,omitempty"`
-	AuthorID  uint64          `json:"author_id,omitempty"`
-	TargetUID uint64          `json:"target_uid,omitempty"`
-	Dims      []*SemanticDim  `json:"dims,omitempty"`
+	Keyword   string         `json:"keyword,omitempty"`
+	Sort      string         `json:"sort,omitempty"`
+	Limit     int            `json:"limit,omitempty"`
+	Page      int            `json:"page,omitempty"`
+	UserID    uint64         `json:"user_id,omitempty"`
+	VideoID   uint64         `json:"video_id,omitempty"`
+	AuthorID  uint64         `json:"author_id,omitempty"`
+	TargetUID uint64         `json:"target_uid,omitempty"`
+	Dims      []*SemanticDim `json:"dims,omitempty"`
 }
 
 type Complexity string
@@ -45,11 +93,11 @@ const (
 )
 
 type Task struct {
-	Query     string        `json:"query,omitempty"`
-	Intent    Intent        `json:"intent"`
-	Slots     *TaskSlot     `json:"slots"`
-	Complexity Complexity    `json:"complexity"`
-	Confidence float64      `json:"confidence"`
+	Query      string      `json:"query,omitempty"`
+	Intent     Intent      `json:"intent"`
+	Slots      *TaskSlot   `json:"slots"`
+	Complexity Complexity  `json:"complexity"`
+	Confidence float64     `json:"confidence"`
 }
 
 // VideoInfo 视频基础信息结构，供格式化函数使用。
@@ -66,193 +114,22 @@ type VideoInfo struct {
 	Tags       []string `json:"tags,omitempty"`
 }
 
-// RequestParams 来自前端的精确请求参数。
-type RequestParams struct {
-	VideoID  uint64 `json:"video_id,omitempty"`
-	Keyword  string `json:"keyword,omitempty"`
-	Page     int    `json:"page,omitempty"`
-	PageSize int    `json:"page_size,omitempty"`
-	UserID   uint64 `json:"user_id,omitempty"`
+// RunSimpleTaskInput 是 RunSimpleTask 的输入参数。
+// 包含完整的 Task 信息，其中 Slots 包含所有精确参数（video_id、keyword、page 等）。
+type RunSimpleTaskInput struct {
+	Task *Task
 }
 
-// ParseRequestParams 解析 query 中的请求参数前缀，返回纯 query 和解析后的参数。
-// query 格式: ## 请求参数\nkey=value\n...\n\n## 用户查询\nactual_query
-// 如果没有参数前缀，返回原始 query 和 nil。
-func ParseRequestParams(query string) (string, *RequestParams) {
-	const marker = "## 请求参数"
-	idx := -1
-	for i := 0; i < len(query) && i+len(marker) <= len(query); i++ {
-		if query[i:i+len(marker)] == marker {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return query, nil
-	}
-
-	// 找到 ## 用户查询 标记，分隔参数块和实际 query
-	const queryMarker = "## 用户查询"
-	actualQueryStart := -1
-	for i := idx + len(marker); i+len(queryMarker) <= len(query); i++ {
-		if query[i:i+len(queryMarker)] == queryMarker {
-			actualQueryStart = i + len(queryMarker)
-			break
-		}
-	}
-
-	var paramBlock string
-	var actualQuery string
-	if actualQueryStart != -1 {
-		paramBlock = query[idx:actualQueryStart]
-		actualQuery = query[actualQueryStart:]
-	} else {
-		paramBlock = query[idx:]
-		actualQuery = ""
-	}
-
-	params := &RequestParams{}
-	for _, line := range splitLines(paramBlock) {
-		line = trimPrefix(line, "## 请求参数")
-		line = trimPrefix(line, "## 用户查询")
-		line = trimSpace(line)
-		if line == "" || line[0] == '#' {
-			continue
-		}
-		parts := split2(line, "=")
-		if len(parts) != 2 {
-			continue
-		}
-		key := trimSpace(parts[0])
-		val := trimSpace(parts[1])
-		switch key {
-		case "video_id":
-			params.VideoID = parseUint64(val)
-		case "keyword":
-			params.Keyword = val
-		case "page":
-			params.Page = int(parseUint64(val))
-		case "page_size":
-			params.PageSize = int(parseUint64(val))
-		case "user_id":
-			params.UserID = parseUint64(val)
-		}
-	}
-
-	return trimSpace(actualQuery), params
+// RunComplexTaskInputV2 是 RunComplexTaskV2 的输入参数。
+// 包含完整的 Task 信息和 MCP 工具信息。
+type RunComplexTaskInputV2 struct {
+	Task         *Task
+	MCPToolsInfo []*schema.ToolInfo
 }
 
-func splitLines(s string) []string {
-	var lines []string
-	start := 0
-	for i := 0; i <= len(s); i++ {
-		if i == len(s) || s[i] == '\n' {
-			line := s[start:i]
-			start = i + 1
-			lines = append(lines, line)
-		}
-	}
-	return lines
-}
-
-func split2(s, sep string) []string {
-	idx := -1
-	for i := 0; i+len(sep) <= len(s); i++ {
-		if s[i:i+len(sep)] == sep {
-			idx = i
-			break
-		}
-	}
-	if idx == -1 {
-		return []string{s}
-	}
-	return []string{s[:idx], s[idx+len(sep):]}
-}
-
-func trimSpace(s string) string {
-	i, j := 0, len(s)-1
-	for i < len(s) && (s[i] == ' ' || s[i] == '\t' || s[i] == '\r') {
-		i++
-	}
-	for j >= i && (s[j] == ' ' || s[j] == '\t' || s[j] == '\r' || s[j] == '\n') {
-		j--
-	}
-	return s[i : j+1]
-}
-
-func trimPrefix(s, prefix string) string {
-	if len(s) >= len(prefix) && s[:len(prefix)] == prefix {
-		return s[len(prefix):]
-	}
-	return s
-}
-
-func parseUint64(s string) uint64 {
-	var n uint64
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			break
-		}
-		n = n*10 + uint64(c-'0')
-	}
-	return n
-}
-
-func BuildQueryWithParams(query string, videoID int64, keyword string, page, pageSize int, userID uint64) string {
-	if videoID == 0 && keyword == "" && page == 0 && pageSize == 0 && userID == 0 {
-		return query
-	}
-	var parts []string
-	parts = append(parts, "## 请求参数")
-	if videoID > 0 {
-		parts = append(parts, "video_id="+int64ToString(videoID))
-	}
-	if keyword != "" {
-		parts = append(parts, "keyword="+keyword)
-	}
-	if page > 0 {
-		parts = append(parts, "page="+intToString(page))
-	}
-	if pageSize > 0 {
-		parts = append(parts, "page_size="+intToString(pageSize))
-	}
-	if userID > 0 {
-		parts = append(parts, "user_id="+uint64ToString(userID))
-	}
-	parts = append(parts, "")
-	parts = append(parts, "## 用户查询")
-	parts = append(parts, query)
-	return strings.Join(parts, "\n")
-}
-
-func int64ToString(n int64) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
-}
-
-func uint64ToString(n uint64) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
-}
-
-func intToString(n int) string {
-	return int64ToString(int64(n))
+// RunComplexTaskInput 是 RunComplexTask 的输入参数（遗留类型，仅保留以兼容外部调用者）。
+// 新代码应使用 RunComplexTaskInputV2。
+type RunComplexTaskInput struct {
+	Query  string
+	UserID uint64
 }

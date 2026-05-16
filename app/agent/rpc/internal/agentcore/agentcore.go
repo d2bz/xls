@@ -16,9 +16,11 @@ import (
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	agentpb "xls/app/agent/rpc/agent"
+	"xls/app/agent/rpc/internal/agentcore/memory"
 	"xls/app/agent/rpc/internal/agentcore/milvus"
 	"xls/app/agent/rpc/internal/agentcore/router"
 	"xls/app/agent/rpc/internal/agentcore/tools"
+	"xls/app/agent/rpc/internal/agentcore/workflows"
 	"xls/app/follow/rpc/followclient"
 	"xls/app/like/rpc/likeclient"
 	"xls/app/user/rpc/userclient"
@@ -133,7 +135,7 @@ func MustInit(ctx context.Context, deps AgentDeps, cfg AgentConfig) (*AgentCore,
 		return nil, fmt.Errorf("bind tools failed: %w", err)
 	}
 
-	// 5. 创建意图路由 Graph（现有逻辑）
+	// 5. 创建意图路由 Graph
 	intentGraph, err := router.NewIntentRouterGraph(ctx, router.RouterGraphConfig{
 		ChatModel:        chatModel,
 		ToolChatModel:    toolChatModel,
@@ -150,25 +152,25 @@ func MustInit(ctx context.Context, deps AgentDeps, cfg AgentConfig) (*AgentCore,
 		return nil, fmt.Errorf("create intent router graph failed: %w", err)
 	}
 
-	// 5. 将 Graph 包装为 tool，供 ChatModelAgent 调用
+	// 6. 将 Graph 包装为 tool，供 ChatModelAgent 调用
 	graphTool, err := newRouterGraphTool(intentGraph)
 	if err != nil {
 		return nil, fmt.Errorf("wrap graph as tool failed: %w", err)
 	}
 
-	// 6. 构建 ChatModelAgentMiddleware
+	// 7. 构建 ChatModelAgentMiddleware
 	handlers, err := buildMiddlewareHandlers(ctx, chatModel, cfg.MiddlewareCfg)
 	if err != nil {
 		return nil, fmt.Errorf("build middleware handlers: %w", err)
 	}
 
-	// 7. 创建 ChatModelAgent
+	// 8. 创建 ChatModelAgent
 	agent, err := newChatModelAgent(ctx, chatModel, toolChatModel, graphTool, handlers)
 	if err != nil {
 		return nil, fmt.Errorf("create chat model agent failed: %w", err)
 	}
 
-	// 8. 创建 Runner
+	// 9. 创建 Runner
 	runner := adk.NewRunner(ctx, adk.RunnerConfig{
 		Agent:           agent,
 		EnableStreaming: false,
@@ -215,17 +217,18 @@ func newChatModelAgent(
 	})
 }
 
-// routerGraphTool 包装 compose.Graph[string,string] 为 eino tool.BaseTool。
+// routerGraphTool 包装 compose.Graph[*RouterInput, *WorkflowResult] 为 eino tool.BaseTool。
+// Graph 返回 WorkflowResult，tool 层将其序列化为 JSON 字符串返回给 Agent。
 type routerGraphTool struct {
 	name        string
 	description string
-	graph       compose.Runnable[string, string]
+	graph       compose.Runnable[*router.RouterInput, *workflows.WorkflowResult]
 }
 
-func newRouterGraphTool(graph compose.Runnable[string, string]) (tool.BaseTool, error) {
+func newRouterGraphTool(graph compose.Runnable[*router.RouterInput, *workflows.WorkflowResult]) (tool.BaseTool, error) {
 	t := &routerGraphTool{
 		name:        "video_router_tool",
-		description: "短视频平台路由工具。根据用户查询判断意图（搜索/推荐/分析/关系），调度对应工作流，返回结构化结果。",
+		description: "短视频平台路由工具。根据用户查询判断意图（搜索/推荐/分析/关系），调度对应工作流，返回结构化结果（JSON格式，内含text、videos、total等字段）。",
 		graph:       graph,
 	}
 	return t, nil
@@ -246,28 +249,67 @@ func (t *routerGraphTool) Info(ctx context.Context) (*schema.ToolInfo, error) {
 				Desc:     "当前用户ID",
 				Required: false,
 			},
+			"video_id": {
+				Type:     schema.Integer,
+				Desc:     "视频ID（用于分析指定视频或搜索相关视频）",
+				Required: false,
+			},
+			"keyword": {
+				Type:     schema.String,
+				Desc:     "搜索关键词",
+				Required: false,
+			},
+			"page": {
+				Type:     schema.Integer,
+				Desc:     "分页页码，从1开始",
+				Required: false,
+			},
+			"page_size": {
+				Type:     schema.Integer,
+				Desc:     "每页数量",
+				Required: false,
+			},
 		}),
 	}, nil
 }
 
 func (t *routerGraphTool) InvokableRun(ctx context.Context, params string, opts ...tool.Option) (string, error) {
 	var p struct {
-		Query  string `json:"query"`
-		UserID uint64 `json:"user_id,omitempty"`
+		Query    string `json:"query"`
+		UserID   uint64 `json:"user_id"`
+		VideoID  uint64 `json:"video_id"`
+		Keyword  string `json:"keyword"`
+		Page     int    `json:"page"`
+		PageSize int    `json:"page_size"`
 	}
 	if err := json.Unmarshal([]byte(params), &p); err != nil {
 		return "", fmt.Errorf("invalid params: %w", err)
 	}
 
-	result, err := t.graph.Invoke(ctx, p.Query)
+	input := &router.RouterInput{
+		Query:    p.Query,
+		UserID:   p.UserID,
+		VideoID:  p.VideoID,
+		Keyword:  p.Keyword,
+		Page:     p.Page,
+		PageSize: p.PageSize,
+	}
+
+	result, err := t.graph.Invoke(ctx, input)
 	if err != nil {
 		return "", fmt.Errorf("graph invoke failed: %w", err)
 	}
-	return result, nil
+
+	// 将 WorkflowResult 序列化为 JSON 返回
+	resp, err := json.Marshal(result)
+	if err != nil {
+		return "", fmt.Errorf("marshal workflow result failed: %w", err)
+	}
+	return string(resp), nil
 }
 
-// MustInitLegacy 返回纯 compose.Runnable[string,string]，兼容旧调用方式（不走多轮）。
-func MustInitLegacy(ctx context.Context, deps AgentDeps, cfg AgentConfig) (compose.Runnable[string, string], error) {
+// MustInitLegacy 返回纯 compose.Runnable[*RouterInput, *WorkflowResult]，兼容旧调用方式（不走多轮）。
+func MustInitLegacy(ctx context.Context, deps AgentDeps, cfg AgentConfig) (compose.Runnable[*router.RouterInput, *workflows.WorkflowResult], error) {
 	chatModel, err := ark.NewChatModel(ctx, &ark.ChatModelConfig{
 		APIKey:  cfg.ArkAPIKey,
 		Model:   cfg.ArkModel,
@@ -363,7 +405,6 @@ func buildMiddlewareHandlers(ctx context.Context, chatModel model.BaseChatModel,
 				MaxTokens: cfg.Summarization.PreserveTokens,
 			}
 		} else {
-			// 默认启用，保留最近 1/3 token 的用户消息
 			summaryCfg.PreserveUserMessages = &summarization.PreserveUserMessages{
 				Enabled: true,
 			}
@@ -409,89 +450,32 @@ func buildMiddlewareHandlers(ctx context.Context, chatModel model.BaseChatModel,
 	return handlers, nil
 }
 
-// BuildQueryWithParams 将请求参数编码为带前缀的 query 字符串。
-// Supervisor 会解析前缀并存入 State，后续节点通过 ProcessState 读取。
-func BuildQueryWithParams(query string, videoID int64, keyword string, page, pageSize int, userID uint64) string {
-	if videoID == 0 && keyword == "" && page == 0 && pageSize == 0 && userID == 0 {
-		return query
-	}
-	var parts []string
-	parts = append(parts, "## 请求参数")
-	if videoID > 0 {
-		parts = append(parts, "video_id="+int64ToString(videoID))
-	}
-	if keyword != "" {
-		parts = append(parts, "keyword="+keyword)
-	}
-	if page > 0 {
-		parts = append(parts, "page="+int64ToString(int64(page)))
-	}
-	if pageSize > 0 {
-		parts = append(parts, "page_size="+int64ToString(int64(pageSize)))
-	}
-	if userID > 0 {
-		parts = append(parts, "user_id="+uint64ToString(userID))
-	}
-	parts = append(parts, "", "## 用户查询", query)
-	return strings.Join(parts, "\n")
-}
-
-func int64ToString(n int64) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
-}
-
-func uint64ToString(n uint64) string {
-	if n == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for n > 0 {
-		i--
-		buf[i] = byte('0' + n%10)
-		n /= 10
-	}
-	return string(buf[i:])
-}
-
 // FillStructuredResponse 从 Session 中提取工作流执行结果，填充到 ChatResponse 的结构化字段。
-// 当前实现：解析 Session 最后一条 assistant 消息中的 JSON 数据，提取 videos 和 total。
-func FillStructuredResponse(sessionUUID string, store *SessionStore, resp *agentpb.ChatResponse) {
+// 当前实现：解析 Session 最后一条 assistant 消息中的 WorkflowResult JSON 数据，
+// 提取 text、videos 和 total 字段。
+func FillStructuredResponse(sessionID uint, store memory.SessionStore, resp *agentpb.ChatResponse) {
 	if store == nil {
 		return
 	}
-	msgs, err := store.GetMessages(context.Background(), sessionUUID)
+	msgs, err := store.GetMessages(context.Background(), sessionID)
 	if err != nil || len(msgs) == 0 {
 		return
 	}
 	for i := len(msgs) - 1; i >= 0; i-- {
 		if msgs[i].Role == schema.Assistant && msgs[i].Content != "" {
-			extractVideosFromAnswer(msgs[i].Content, resp)
+			extractWorkflowResultFromAnswer(msgs[i].Content, resp)
 			return
 		}
 	}
 }
 
-// extractVideosFromAnswer 解析 assistant 消息中的 JSON 数据，填充到 resp。
-func extractVideosFromAnswer(content string, resp *agentpb.ChatResponse) {
-	// 工具返回的 JSON 格式: {"videos":[...],"total":N}
-	// assistant 消息可能以文本开头（如 "为你推荐以下内容：\n"），后面跟着 JSON
-	// 策略：找到第一个 { 然后截取到对应的 }
+// extractWorkflowResultFromAnswer 解析 assistant 消息中的 WorkflowResult JSON。
+// WorkflowResult 格式: {"resultType":"video_list","text":"...","videos":[...],"total":N}
+func extractWorkflowResultFromAnswer(content string, resp *agentpb.ChatResponse) {
 	start := strings.Index(content, "{")
 	if start < 0 {
 		return
 	}
-	// 找到匹配的闭合 }
 	depth := 0
 	end := start
 	for i := start; i < len(content); i++ {
@@ -509,40 +493,13 @@ func extractVideosFromAnswer(content string, resp *agentpb.ChatResponse) {
 		return
 	}
 
-	var data struct {
-		Videos []struct {
-			VideoID      int32    `json:"videoID"`
-			AuthorID     int32    `json:"authorID"`
-			AuthorName   string   `json:"authorName"`
-			AuthorAvatar string   `json:"authorAvatar"`
-			Title        string   `json:"title"`
-			Url          string   `json:"url"`
-			LikeNum      int32    `json:"likeNum"`
-			CommentNum   int32    `json:"commentNum"`
-			CreatedAt    string   `json:"createdAt"`
-			Tags         []string `json:"tags"`
-		} `json:"videos"`
-		Total int64 `json:"total"`
-	}
-	if err := json.Unmarshal([]byte(content[start:end]), &data); err != nil {
+	var result workflows.WorkflowResult
+	if err := json.Unmarshal([]byte(content[start:end]), &result); err != nil {
 		return
 	}
-	if len(data.Videos) == 0 {
-		return
+
+	if len(result.Videos) > 0 {
+		resp.Videos = result.Videos
+		resp.Total = result.Total
 	}
-	for _, v := range data.Videos {
-		resp.Videos = append(resp.Videos, &agentpb.VideoItem{
-			VideoID:      v.VideoID,
-			AuthorID:     v.AuthorID,
-			AuthorName:   v.AuthorName,
-			AuthorAvatar: v.AuthorAvatar,
-			Title:        v.Title,
-			Url:          v.Url,
-			LikeNum:      v.LikeNum,
-			CommentNum:   v.CommentNum,
-			CreatedAt:    v.CreatedAt,
-			Tags:         v.Tags,
-		})
-	}
-	resp.Total = data.Total
 }

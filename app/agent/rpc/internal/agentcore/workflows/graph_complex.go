@@ -19,18 +19,15 @@ const (
 	complexDefaultMaxLoopIter = 3
 )
 
-// RunComplexTask 通过 Plan-Execute-Replan 模式执行复杂任务。
-// toolChatModel 应该是已经绑定了工具的 ToolCallingChatModel。
-// mcpToolsInfo 是 MCP 工具的 ToolInfo 列表，用于动态注入到 prompt 中，
-// 让 LLM 知道可以调用哪些 MCP 视频分析工具。
-func RunComplexTask(
+// RunComplexTaskV2 通过 Plan-Execute-Replan 模式执行复杂任务。
+// 使用 RunComplexTaskInputV2 作为输入，Slots 包含所有精确参数。
+func RunComplexTaskV2(
 	ctx context.Context,
 	toolChatModel model.ToolCallingChatModel,
 	tools []tool.BaseTool,
-	mcpToolsInfo []*schema.ToolInfo,
-	input *RunComplexTaskInput,
+	input *RunComplexTaskInputV2,
 	maxSteps, maxLoop int,
-) (string, error) {
+) (*WorkflowResult, error) {
 	if maxSteps <= 0 {
 		maxSteps = complexDefaultMaxSteps
 	}
@@ -38,41 +35,316 @@ func RunComplexTask(
 		maxLoop = complexDefaultMaxLoopIter
 	}
 
-	// 1. 创建 Planner
-	planner, err := planexecute.NewPlanner(ctx, &planexecute.PlannerConfig{
-		ToolCallingChatModel: toolChatModel,
-		GenInputFn:         genComplexPlannerInput,
-	})
-	if err != nil {
-		return "", fmt.Errorf("create planner failed: %w", err)
+	task := input.Task
+	slots := task.Slots
+	if slots == nil {
+		slots = &TaskSlot{}
 	}
 
-	// 构建动态 executor prompt，注入 MCP 工具列表
+	// 构建 MCP 工具 section
 	var mcpToolsSection string
-	for _, t := range mcpToolsInfo {
-		mcpToolsSection += fmt.Sprintf("- %s: %s\n", t.Name, t.Desc)
-	}
-	if mcpToolsSection != "" {
+	if len(input.MCPToolsInfo) > 0 {
+		for _, t := range input.MCPToolsInfo {
+			mcpToolsSection += fmt.Sprintf("- %s: %s\n", t.Name, t.Desc)
+		}
 		mcpToolsSection = "\n\n## MCP 视频分析工具（可选调用）\n" + mcpToolsSection +
 			"\n优先使用确定性的业务工具；需要深度分析视频内容时，使用 MCP 视频分析工具"
 	}
 
+	// 1. 创建 Planner
+	planner, err := planexecute.NewPlanner(ctx, &planexecute.PlannerConfig{
+		ToolCallingChatModel: toolChatModel,
+		GenInputFn:           genComplexPlannerInput,
+	})
+	if err != nil {
+		return &WorkflowResult{
+			ResultType: ResultTypeText,
+			Text:       "抱歉，任务规划失败：" + err.Error(),
+		}, nil
+	}
+
+	// 构建 Executor prompt 模板（包含精确参数）
+	executorPromptTpl := buildComplexExecutorPromptTemplate(slots, mcpToolsSection)
+
 	// 2. 创建 Executor
 	executor, err := planexecute.NewExecutor(ctx, &planexecute.ExecutorConfig{
 		Model:         toolChatModel,
-		ToolsConfig: adk.ToolsConfig{ToolsNodeConfig: compose.ToolsNodeConfig{Tools: tools}},
+		ToolsConfig:   adk.ToolsConfig{ToolsNodeConfig: compose.ToolsNodeConfig{Tools: tools}},
 		MaxIterations: maxSteps,
 		GenInputFn: func(ctx context.Context, in *planexecute.ExecutionContext) ([]adk.Message, error) {
 			planJSON, _ := json.Marshal(in.Plan)
-			promptText := `你是一个勤奋的执行者。严格按计划执行当前步骤，并在执行后汇报结果。
+			return executorPromptTpl.Format(ctx, map[string]any{
+				"input":           formatComplexUserInputFromMsg(in.UserInput),
+				"plan":           string(planJSON),
+				"executed_steps":  formatComplexStepsStr(in.ExecutedSteps),
+				"step":           in.Plan.FirstStep(),
+			})
+		},
+	})
+	if err != nil {
+		return &WorkflowResult{
+			ResultType: ResultTypeText,
+			Text:       "抱歉，任务执行器初始化失败：" + err.Error(),
+		}, nil
+	}
 
-## 你的工具
-你可以调用以下工具完成任务：
+	// 3. 创建 Replanner
+	replanner, err := planexecute.NewReplanner(ctx, &planexecute.ReplannerConfig{
+		ChatModel: toolChatModel,
+		GenInputFn: genComplexReplannerInput,
+	})
+	if err != nil {
+		return &WorkflowResult{
+			ResultType: ResultTypeText,
+			Text:       "抱歉，任务重规划失败：" + err.Error(),
+		}, nil
+	}
+
+	// 4. 创建 Plan-Execute Agent
+	agent, err := planexecute.New(ctx, &planexecute.Config{
+		Planner:       planner,
+		Executor:      executor,
+		Replanner:     replanner,
+		MaxIterations: maxLoop,
+	})
+	if err != nil {
+		return &WorkflowResult{
+			ResultType: ResultTypeText,
+			Text:       "抱歉，任务规划器创建失败：" + err.Error(),
+		}, nil
+	}
+
+	// 5. 运行 Agent
+	runner := adk.NewRunner(ctx, adk.RunnerConfig{Agent: agent})
+	userInput := buildComplexUserInput(slots, task.Query)
+	iter := runner.Run(ctx, []*schema.Message{schema.UserMessage(userInput)})
+
+	var lastAnswer string
+	for {
+		event, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if event.Err != nil {
+			return &WorkflowResult{
+				ResultType: ResultTypeText,
+				Text:       "抱歉，任务执行出错：" + event.Err.Error(),
+			}, nil
+		}
+		if event.Output != nil && event.Output.MessageOutput != nil {
+			if msg, _ := event.Output.MessageOutput.GetMessage(); msg != nil && msg.Content != "" {
+				lastAnswer = msg.Content
+			}
+		}
+	}
+
+	if lastAnswer == "" {
+		lastAnswer = "抱歉，这个问题比较复杂，AI 暂时无法准确回答。你可以尝试换个方式问我，或者联系管理员。"
+	}
+	return &WorkflowResult{
+		ResultType: ResultTypeText,
+		Text:       lastAnswer,
+	}, nil
+}
+
+// ExecVideoAnalysisAssistantV2 执行视频分析任务。
+// 当 Slots.VideoID > 0 时，走强制 MCP 调用路径（直接传显式 video_id 参数）。
+// 当没有明确 VideoID 时，走通用的 Plan-Execute 路径。
+func ExecVideoAnalysisAssistantV2(
+	ctx context.Context,
+	toolChatModel model.ToolCallingChatModel,
+	tools []tool.BaseTool,
+	input *RunComplexTaskInputV2,
+	maxSteps, maxLoop int,
+) (*WorkflowResult, error) {
+	slots := input.Task.Slots
+	if slots != nil && slots.VideoID > 0 {
+		return runVideoAnalysisWithVideoID(ctx, toolChatModel, tools, input)
+	}
+	return RunComplexTaskV2(ctx, toolChatModel, tools, input, maxSteps, maxLoop)
+}
+
+// runVideoAnalysisWithVideoID 强制用显式 VideoID 调用 MCP 工具，直接传 video_id 参数。
+// 不走通用的 Plan-Execute，而是直接调 MCP 工具获取视频内容，再让 LLM 总结。
+func runVideoAnalysisWithVideoID(
+	ctx context.Context,
+	toolChatModel model.ToolCallingChatModel,
+	tools []tool.BaseTool,
+	input *RunComplexTaskInputV2,
+) (*WorkflowResult, error) {
+	slots := input.Task.Slots
+	videoID := slots.VideoID
+
+	// 1. 找到 MCP 工具
+	var mcpTool tool.InvokableTool
+	for _, t := range tools {
+		if inv, ok := t.(tool.InvokableTool); ok {
+			info, err := t.Info(ctx)
+			if err != nil {
+				continue
+			}
+			// MCP 工具通过 ToolInfo 区分（mcpToolsInfo 中有记录）
+			for _, mcpInfo := range input.MCPToolsInfo {
+				if info.Name == mcpInfo.Name {
+					mcpTool = inv
+					break
+				}
+			}
+			if mcpTool != nil {
+				break
+			}
+		}
+	}
+
+	var videoContent string
+	if mcpTool != nil {
+		// 2. 直接用显式 video_id 调用 MCP 工具
+		params := fmt.Sprintf(`{"video_id":%d}`, videoID)
+		result, err := mcpTool.InvokableRun(ctx, params)
+		if err != nil {
+			return &WorkflowResult{
+				ResultType: ResultTypeText,
+				Text:       fmt.Sprintf("抱歉，获取视频内容失败：%v", err),
+			}, nil
+		}
+		videoContent = result
+	} else {
+		// 没有 MCP 工具时，构造一个说明性的提示让 LLM 知道需要分析
+		videoContent = fmt.Sprintf("用户请求分析视频 ID=%d，但当前无可用的视频内容分析工具。", videoID)
+	}
+
+	// 3. 让 LLM 根据视频内容生成总结
+	analysisPrompt := fmt.Sprintf(`你是一个专业的视频内容分析助手。以下是视频 ID=%d 的内容信息：
+
+%s
+
+请根据上述内容，为用户提供一段简洁、有价值的分析总结。要求：
+1. 总结视频的主要内容或亮点
+2. 如果有配乐、BGM、文字内容、场景等特色，一并指出
+3. 语言简洁友好，用中文回复
+4. 长度控制在 200 字以内
+5. 不要编造内容，如果信息不足如实告知用户`, videoID, videoContent)
+
+	resp, err := toolChatModel.Generate(ctx, []*schema.Message{
+		schema.SystemMessage(analysisPrompt),
+	})
+	if err != nil {
+		return &WorkflowResult{
+			ResultType: ResultTypeText,
+			Text:       "抱歉，分析过程出现错误：" + err.Error(),
+		}, nil
+	}
+
+	text := resp.Content
+	if text == "" {
+		text = "抱歉，暂时无法获取该视频的分析结果，请稍后再试。"
+	}
+	return &WorkflowResult{
+		ResultType: ResultTypeText,
+		Text:       text,
+	}, nil
+}
+
+// buildComplexUserInput 构建复杂任务的输入文本，包含精确参数。
+func buildComplexUserInput(slots *TaskSlot, query string) string {
+	var preciseParams string
+	if slots.UserID > 0 {
+		preciseParams += fmt.Sprintf("- 用户ID: %d\n", slots.UserID)
+	}
+	if slots.VideoID > 0 {
+		preciseParams += fmt.Sprintf("- 视频ID: %d\n", slots.VideoID)
+	}
+	if slots.Keyword != "" {
+		preciseParams += fmt.Sprintf("- 搜索关键词: %s\n", slots.Keyword)
+	}
+	if slots.Page > 0 {
+		preciseParams += fmt.Sprintf("- 页码: %d\n", slots.Page)
+	}
+	if slots.Limit > 0 {
+		preciseParams += fmt.Sprintf("- 数量限制: %d\n", slots.Limit)
+	}
+	if slots.Sort != "" {
+		preciseParams += fmt.Sprintf("- 排序方式: %s\n", slots.Sort)
+	}
+
+	if preciseParams != "" {
+		return fmt.Sprintf("## 精确参数（来自用户请求，请务必使用）\n%s\n## 用户查询\n%s", preciseParams, query)
+	}
+	return fmt.Sprintf("## 用户查询\n%s", query)
+}
+
+// buildComplexExecutorPromptTemplate 构建 Executor 的 prompt 模板，包含精确参数供 LLM 工具调用使用。
+func buildComplexExecutorPromptTemplate(slots *TaskSlot, mcpToolsSection string) prompt.ChatTemplate {
+	var baseTools string
+	if mcpToolsSection != "" {
+		baseTools = `你可以调用以下工具完成任务：
 - search_video: 搜索视频
 - get_hot_videos: 获取热门视频
 - get_user_info: 查询用户信息
 - get_follow_list: 查询关注列表
-- get_fans_list: 查询粉丝列表` + mcpToolsSection + `
+- get_fans_list: 查询粉丝列表` + mcpToolsSection
+	} else {
+		baseTools = `你可以调用以下工具完成任务：
+- search_video: 搜索视频
+- get_hot_videos: 获取热门视频
+- get_user_info: 查询用户信息
+- get_follow_list: 查询关注列表
+- get_fans_list: 查询粉丝列表`
+	}
+
+	// 构建精确参数 section
+	var preciseParams string
+	if slots.UserID > 0 {
+		preciseParams += fmt.Sprintf("- 用户ID: %d\n", slots.UserID)
+	}
+	if slots.VideoID > 0 {
+		preciseParams += fmt.Sprintf("- 视频ID: %d\n", slots.VideoID)
+	}
+	if slots.Keyword != "" {
+		preciseParams += fmt.Sprintf("- 搜索关键词: %s\n", slots.Keyword)
+	}
+	if slots.Page > 0 {
+		preciseParams += fmt.Sprintf("- 页码: %d\n", slots.Page)
+	}
+	if slots.Limit > 0 {
+		preciseParams += fmt.Sprintf("- 数量限制: %d\n", slots.Limit)
+	}
+	if slots.Sort != "" {
+		preciseParams += fmt.Sprintf("- 排序方式: %s\n", slots.Sort)
+	}
+
+	var fullPrompt string
+	if preciseParams != "" {
+		fullPrompt = fmt.Sprintf(`你是一个勤奋的执行者。严格按计划执行当前步骤，并在执行后汇报结果。
+
+## 你的工具
+%s
+
+## 精确参数（来自用户请求，调用工具时请务必使用）
+%s## 执行原则
+- 每次只执行一个步骤
+- 调用工具时提供准确的参数（使用上述精确参数中的值）
+- 如果上一步骤已有结果，本步骤可以利用该结果
+- 执行完成后，用一段话描述执行结果
+
+## 当前任务
+{input}
+
+## 计划
+{plan}
+
+## 已完成步骤及结果
+{executed_steps}
+
+## 当前步骤
+{step}
+
+请执行当前步骤。`, baseTools, preciseParams)
+	} else {
+		fullPrompt = fmt.Sprintf(`你是一个勤奋的执行者。严格按计划执行当前步骤，并在执行后汇报结果。
+
+## 你的工具
+%s
 
 ## 执行原则
 - 每次只执行一个步骤
@@ -92,74 +364,15 @@ func RunComplexTask(
 ## 当前步骤
 {step}
 
-请执行当前步骤。`
-			promptTpl := prompt.FromMessages(schema.FString,
-				schema.SystemMessage(promptText),
-			)
-			return promptTpl.Format(ctx, map[string]any{
-				"input":          formatComplexUserInputFromMsg(in.UserInput),
-				"plan":           string(planJSON),
-				"executed_steps": formatComplexStepsStr(in.ExecutedSteps),
-				"step":           in.Plan.FirstStep(),
-			})
-		},
-	})
-	if err != nil {
-		return "", fmt.Errorf("create executor failed: %w", err)
+请执行当前步骤。`, baseTools)
 	}
 
-	// 3. 创建 Replanner
-	replanner, err := planexecute.NewReplanner(ctx, &planexecute.ReplannerConfig{
-		ChatModel: toolChatModel,
-		GenInputFn: genComplexReplannerInput,
-	})
-	if err != nil {
-		return "", fmt.Errorf("create replanner failed: %w", err)
-	}
-
-	// 4. 创建 Plan-Execute Agent
-	agent, err := planexecute.New(ctx, &planexecute.Config{
-		Planner:       planner,
-		Executor:      executor,
-		Replanner:     replanner,
-		MaxIterations: maxLoop,
-	})
-	if err != nil {
-		return "", fmt.Errorf("create plan-execute agent failed: %w", err)
-	}
-
-	// 5. 运行 Agent
-	runner := adk.NewRunner(ctx, adk.RunnerConfig{Agent: agent})
-	query := formatComplexUserInputStatic(input.UserID, input.Query)
-	iter := runner.Run(ctx, []*schema.Message{schema.UserMessage(query)})
-
-	var lastAnswer string
-	for {
-		event, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if event.Err != nil {
-			return "", event.Err
-		}
-		if event.Output != nil && event.Output.MessageOutput != nil {
-			if msg, _ := event.Output.MessageOutput.GetMessage(); msg != nil && msg.Content != "" {
-				lastAnswer = msg.Content
-			}
-		}
-	}
-
-	if lastAnswer == "" {
-		lastAnswer = "抱歉，这个问题比较复杂，AI 暂时无法准确回答。你可以尝试换个方式问我，或者联系管理员。"
-	}
-	return lastAnswer, nil
+	return prompt.FromMessages(schema.FString,
+		schema.SystemMessage(fullPrompt),
+	)
 }
 
-func formatComplexUserInputStatic(userID uint64, query string) string {
-	return fmt.Sprintf("用户ID: %d\n查询: %s", userID, query)
-}
-
-// 以下是 Plan-Execute 的 prompt，复用现有 fallback.go 中的内容
+// 以下是 Plan-Execute 的 prompt 模板
 
 var complexPlannerPrompt = prompt.FromMessages(schema.FString,
 	schema.SystemMessage(`你是一个短视频平台任务规划助手。
@@ -196,38 +409,6 @@ var complexPlannerPrompt = prompt.FromMessages(schema.FString,
 示例：
 {"steps": ["调用 get_hot_videos 获取当前热门视频列表", "分析热度数据找出前3名"]}`),
 	schema.MessagesPlaceholder("input", false),
-)
-
-var complexExecutorPrompt = prompt.FromMessages(schema.FString,
-	schema.SystemMessage(`你是一个勤奋的执行者。严格按计划执行当前步骤，并在执行后汇报结果。
-
-## 你的工具
-你可以调用以下工具完成任务：
-- search_video: 搜索视频
-- get_hot_videos: 获取热门视频
-- get_user_info: 查询用户信息
-- get_follow_list: 查询关注列表
-- get_fans_list: 查询粉丝列表
-
-## 执行原则
-- 每次只执行一个步骤
-- 调用工具时提供准确的参数
-- 如果上一步骤已有结果，本步骤可以利用该结果
-- 执行完成后，用一段话描述执行结果
-
-## 当前任务
-{input}
-
-## 计划
-{plan}
-
-## 已完成步骤及结果
-{executed_steps}
-
-## 当前步骤
-{step}
-
-请执行当前步骤。`),
 )
 
 var complexReplannerPrompt = prompt.FromMessages(schema.FString,
@@ -271,16 +452,6 @@ func genComplexPlannerInput(ctx context.Context, userInput []adk.Message) ([]adk
 	return complexPlannerPrompt.Format(ctx, map[string]any{"input": userInput})
 }
 
-func genComplexExecutorInput(ctx context.Context, in *planexecute.ExecutionContext) ([]adk.Message, error) {
-	planJSON, _ := json.Marshal(in.Plan)
-	return complexExecutorPrompt.Format(ctx, map[string]any{
-		"input":          formatComplexUserInputFromMsg(in.UserInput),
-		"plan":           string(planJSON),
-		"executed_steps": formatComplexStepsStr(in.ExecutedSteps),
-		"step":           in.Plan.FirstStep(),
-	})
-}
-
 func genComplexReplannerInput(ctx context.Context, in *planexecute.ExecutionContext) ([]adk.Message, error) {
 	planJSON, _ := json.Marshal(in.Plan)
 	return complexReplannerPrompt.Format(ctx, map[string]any{
@@ -303,23 +474,4 @@ func formatComplexStepsStr(steps []planexecute.ExecutedStep) string {
 		result += fmt.Sprintf("步骤: %s\n结果: %s\n\n", s.Step, s.Result)
 	}
 	return result
-}
-
-// RunComplexTaskInput 是复杂任务的输入参数。
-type RunComplexTaskInput struct {
-	Query  string
-	UserID uint64
-}
-
-// ExecVideoAnalysisAssistant 执行视频分析任务（Plan-Execute 模式）。
-// 内部复用 RunComplexTask 的逻辑。
-func ExecVideoAnalysisAssistant(
-	ctx context.Context,
-	toolChatModel model.ToolCallingChatModel,
-	tools []tool.BaseTool,
-	mcpToolsInfo []*schema.ToolInfo,
-	input *RunComplexTaskInput,
-	maxSteps, maxLoop int,
-) (string, error) {
-	return RunComplexTask(ctx, toolChatModel, tools, mcpToolsInfo, input, maxSteps, maxLoop)
 }

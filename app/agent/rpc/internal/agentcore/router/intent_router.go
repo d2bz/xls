@@ -30,13 +30,13 @@ type RouterGraphConfig struct {
 // NewIntentRouterGraph 创建意图路由 Graph。
 // 这是整个 Agent 的核心编排逻辑。
 //
-// Graph 签名: string → string
-//   输入: 用户查询 (来自 START)
-//   输出: 最终回答字符串 (流向 END)
+// Graph 签名: *RouterInput → *WorkflowResult
+//   输入: RouterInput（包含用户查询和所有精确参数）
+//   输出: WorkflowResult（包含回复文本、视频列表、结果类型）
 func NewIntentRouterGraph(
 	ctx context.Context,
 	cfg RouterGraphConfig,
-) (compose.Runnable[string, string], error) {
+) (compose.Runnable[*RouterInput, *workflows.WorkflowResult], error) {
 	// 1. 初始化 State 生成器
 	genState := func(ctx context.Context) *AgentState {
 		return &AgentState{
@@ -44,12 +44,14 @@ func NewIntentRouterGraph(
 		}
 	}
 
-	// 2. 创建顶层 Graph: string → string
-	g := compose.NewGraph[string, string](
+	// 2. 创建顶层 Graph: *RouterInput → *WorkflowResult
+	g := compose.NewGraph[*RouterInput, *workflows.WorkflowResult](
 		compose.WithGenLocalState(genState),
 	)
 
-	// 3. Supervisor Node: query → intent string
+	// 3. Supervisor Node: *RouterInput → intent string
+	// Supervisor 接收完整的 RouterInput，从中提取 Query 用于意图分类，
+	// 同时将精确参数合并到 State.Slots 中，供下游节点使用。
 	supervisorPrompt := buildSupervisorPrompt(cfg.MCPToolsInfo)
 	supervisorNode := supervisorNodeFactory(cfg.ChatModel, supervisorPrompt)
 	if err := g.AddLambdaNode("supervisor", supervisorNode); err != nil {
@@ -63,23 +65,40 @@ func NewIntentRouterGraph(
 	}
 
 	// 5. 意图执行节点
-	// 所有意图节点都从 START 边接收 query string（来自 START 的输出）
+	// 所有意图节点都从 START 边接收 *RouterInput（包含所有精确参数）
 	// 同时通过 ProcessState 读取 State 中的分类结果（intent, slots, confidence）
+	// 参数通过边的数据流（Field Mapping）传递，保证类型安全
 
 	// 5.1 simple_task: 合并 video_search、recommend、user_relation 三个简单意图，统一由 ReAct 处理
-	simpleTaskNode := compose.InvokableLambda(func(ctx context.Context, query string) (string, error) {
-		var userID uint64
+	simpleTaskNode := compose.InvokableLambda(func(ctx context.Context, input *RouterInput) (*workflows.WorkflowResult, error) {
+		var intent workflows.Intent
+		var confidence float64
+		var slots *workflows.TaskSlot
 		_ = compose.ProcessState[*AgentState](ctx, func(ctx context.Context, s *AgentState) error {
-			userID = s.Slots.UserID
+			intent = s.Intent
+			confidence = s.Confidence
+			slots = s.Slots
 			return nil
 		})
-		input := &workflows.RunComplexTaskInput{
-			Query:  query,
-			UserID: userID,
+
+		// 构建 Task，将 RouterInput 中的精确参数与 State.Slots 合并
+		// RouterInput 参数优先（来自外部精确请求），State.Slots 兜底（来自 LLM 解析）
+		task := &workflows.Task{
+			Query:      input.Query,
+			Intent:     intent,
+			Slots:      mergeSlots(input, slots),
+			Confidence: confidence,
 		}
-		result, err := workflows.RunSimpleTask(ctx, cfg.ToolChatModel, cfg.Tools, input, cfg.MaxSteps)
+
+		runInput := &workflows.RunSimpleTaskInput{
+			Task: task,
+		}
+		result, err := workflows.RunSimpleTask(ctx, cfg.ToolChatModel, cfg.Tools, runInput, cfg.MaxSteps)
 		if err != nil {
-			return "抱歉，处理请求时遇到问题：" + err.Error(), nil
+			return &workflows.WorkflowResult{
+				ResultType: workflows.ResultTypeText,
+				Text:       "抱歉，处理请求时遇到问题：" + err.Error(),
+			}, nil
 		}
 		return result, nil
 	})
@@ -88,20 +107,35 @@ func NewIntentRouterGraph(
 	}
 
 	// 5.2 video_analysis (Plan-Execute 多轮助手，支持动态工具选择 + MCP 工具)
-	videoAnalysisNode := compose.InvokableLambda(func(ctx context.Context, query string) (string, error) {
-		var userID uint64
+	videoAnalysisNode := compose.InvokableLambda(func(ctx context.Context, input *RouterInput) (*workflows.WorkflowResult, error) {
+		var intent workflows.Intent
+		var confidence float64
+		var slots *workflows.TaskSlot
 		_ = compose.ProcessState[*AgentState](ctx, func(ctx context.Context, s *AgentState) error {
-			userID = s.Slots.UserID
+			intent = s.Intent
+			confidence = s.Confidence
+			slots = s.Slots
 			return nil
 		})
-		input := &workflows.RunComplexTaskInput{
-			Query:  query,
-			UserID: userID,
+
+		task := &workflows.Task{
+			Query:      input.Query,
+			Intent:     intent,
+			Slots:      mergeSlots(input, slots),
+			Confidence: confidence,
 		}
-		result, err := workflows.ExecVideoAnalysisAssistant(ctx, cfg.ToolChatModel, cfg.Tools, cfg.MCPToolsInfo, input, cfg.MaxSteps, cfg.MaxLoopIter)
+
+		runInput := &workflows.RunComplexTaskInputV2{
+			Task:         task,
+			MCPToolsInfo: cfg.MCPToolsInfo,
+		}
+		result, err := workflows.ExecVideoAnalysisAssistantV2(ctx, cfg.ToolChatModel, cfg.Tools, runInput, cfg.MaxSteps, cfg.MaxLoopIter)
 		if err != nil {
 			logx.Errorf("[video_analysis] plan-execute failed: %v", err)
-			return "抱歉，视频分析处理失败：" + err.Error(), nil
+			return &workflows.WorkflowResult{
+				ResultType: workflows.ResultTypeText,
+				Text:       "抱歉，视频分析处理失败：" + err.Error(),
+			}, nil
 		}
 		return result, nil
 	})
@@ -110,20 +144,35 @@ func NewIntentRouterGraph(
 	}
 
 	// 5.3 complex (Plan-Execute-Replan)
-	complexNode := compose.InvokableLambda(func(ctx context.Context, query string) (string, error) {
-		var userID uint64
+	complexNode := compose.InvokableLambda(func(ctx context.Context, input *RouterInput) (*workflows.WorkflowResult, error) {
+		var intent workflows.Intent
+		var confidence float64
+		var slots *workflows.TaskSlot
 		_ = compose.ProcessState[*AgentState](ctx, func(ctx context.Context, s *AgentState) error {
-			userID = s.Slots.UserID
+			intent = s.Intent
+			confidence = s.Confidence
+			slots = s.Slots
 			return nil
 		})
-		input := &workflows.RunComplexTaskInput{
-			Query:  query,
-			UserID: userID,
+
+		task := &workflows.Task{
+			Query:      input.Query,
+			Intent:     intent,
+			Slots:      mergeSlots(input, slots),
+			Confidence: confidence,
 		}
-		result, err := workflows.RunComplexTask(ctx, cfg.ToolChatModel, cfg.Tools, cfg.MCPToolsInfo, input, cfg.MaxSteps, cfg.MaxLoopIter)
+
+		runInput := &workflows.RunComplexTaskInputV2{
+			Task:         task,
+			MCPToolsInfo: cfg.MCPToolsInfo,
+		}
+		result, err := workflows.RunComplexTaskV2(ctx, cfg.ToolChatModel, cfg.Tools, runInput, cfg.MaxSteps, cfg.MaxLoopIter)
 		if err != nil {
 			logx.Errorf("[complex] plan-execute failed: %v", err)
-			return "抱歉，复杂任务处理失败：" + err.Error(), nil
+			return &workflows.WorkflowResult{
+				ResultType: workflows.ResultTypeText,
+				Text:       "抱歉，复杂任务处理失败：" + err.Error(),
+			}, nil
 		}
 		return result, nil
 	})
@@ -143,47 +192,48 @@ func NewIntentRouterGraph(
 		return nil, fmt.Errorf("build semantic workflow failed: %w", err)
 	}
 
-	videoSemanticRecommendNode := compose.InvokableLambda(func(ctx context.Context, query string) (string, error) {
-		var task *workflows.Task
-		if err := compose.ProcessState[*AgentState](ctx, func(ctx context.Context, s *AgentState) error {
-			task = &workflows.Task{
-				Query:     query,
-				Intent:    s.Intent,
-				Slots:     s.Slots,
-				Confidence: s.Confidence,
-			}
+	videoSemanticRecommendNode := compose.InvokableLambda(func(ctx context.Context, input *RouterInput) (*workflows.WorkflowResult, error) {
+		var slots *workflows.TaskSlot
+		_ = compose.ProcessState[*AgentState](ctx, func(ctx context.Context, s *AgentState) error {
+			slots = s.Slots
 			return nil
-		}); err != nil {
-			return "", fmt.Errorf("read state failed: %w", err)
-		}
+		})
 
-		limit := task.Slots.Limit
+		mergedSlots := mergeSlots(input, slots)
+		limit := mergedSlots.Limit
 		if limit <= 0 {
 			limit = 10
 		}
 
-		input := &workflows.SemanticWorkflowInput{
-			Query:  task.Query,
+		workflowInput := &workflows.SemanticWorkflowInput{
+			Query:  input.Query,
 			Limit:  limit,
-			Dims:   task.Slots.Dims,
-			UserID: task.Slots.UserID,
+			Dims:   mergedSlots.Dims,
+			UserID: mergedSlots.UserID,
 		}
 
-		out, err := semanticWorkflow.Invoke(ctx, input)
+		out, err := semanticWorkflow.Invoke(ctx, workflowInput)
 		if err != nil {
 			logx.Errorf("[video_semantic_recommend] workflow invoke failed: %v", err)
-			return "", err
+			return &workflows.WorkflowResult{
+				ResultType: workflows.ResultTypeText,
+				Text:       "推荐处理失败，请稍后再试。",
+			}, nil
 		}
-		return out.Answer, nil
+		return out, nil
 	})
 	if err = g.AddLambdaNode("video_semantic_recommend", videoSemanticRecommendNode); err != nil {
 		return nil, fmt.Errorf("add video_semantic_recommend node failed: %w", err)
 	}
 
 	// 6. 边连接
+	// START → supervisor: 传递完整的 *RouterInput
 	if err := g.AddEdge(compose.START, "supervisor"); err != nil {
 		return nil, fmt.Errorf("add edge START->supervisor failed: %w", err)
 	}
+
+	// 各执行节点: 从 supervisor 边接收 *RouterInput
+	// eino Graph 自动将上游输出作为下游输入，无需显式边连接
 	if err := g.AddEdge("simple_task", compose.END); err != nil {
 		return nil, fmt.Errorf("add edge simple_task->END failed: %w", err)
 	}
@@ -199,4 +249,57 @@ func NewIntentRouterGraph(
 
 	// 7. 编译
 	return g.Compile(ctx, compose.WithMaxRunSteps(50))
+}
+
+// mergeSlots 将 RouterInput 中的精确参数与 State.Slots 合并。
+// RouterInput 参数优先（来自外部精确请求），State.Slots 兜底（来自 LLM 解析）。
+func mergeSlots(input *RouterInput, stateSlots *workflows.TaskSlot) *workflows.TaskSlot {
+	if stateSlots == nil {
+		stateSlots = &workflows.TaskSlot{}
+	}
+
+	merged := &workflows.TaskSlot{}
+
+	// UserID: RouterInput 优先
+	if input.UserID > 0 {
+		merged.UserID = input.UserID
+	} else {
+		merged.UserID = stateSlots.UserID
+	}
+
+	// VideoID: RouterInput 优先
+	if input.VideoID > 0 {
+		merged.VideoID = input.VideoID
+	} else {
+		merged.VideoID = stateSlots.VideoID
+	}
+
+	// Keyword: RouterInput 优先
+	if input.Keyword != "" {
+		merged.Keyword = input.Keyword
+	} else {
+		merged.Keyword = stateSlots.Keyword
+	}
+
+	// Page: RouterInput 优先
+	if input.Page > 0 {
+		merged.Page = input.Page
+	} else {
+		merged.Page = stateSlots.Page
+	}
+
+	// PageSize → Limit: RouterInput 优先
+	if input.PageSize > 0 {
+		merged.Limit = input.PageSize
+	} else {
+		merged.Limit = stateSlots.Limit
+	}
+
+	// AuthorID, TargetUID, Sort, Dims: 仅从 State.Slots 获取
+	merged.AuthorID = stateSlots.AuthorID
+	merged.TargetUID = stateSlots.TargetUID
+	merged.Sort = stateSlots.Sort
+	merged.Dims = stateSlots.Dims
+
+	return merged
 }

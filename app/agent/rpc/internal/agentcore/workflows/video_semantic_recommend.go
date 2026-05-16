@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/cloudwego/eino/components/model"
@@ -35,9 +34,8 @@ type SemanticWorkflowInput struct {
 }
 
 // SemanticWorkflowOutput 是 Workflow 的输出类型。
-type SemanticWorkflowOutput struct {
-	Answer string
-}
+// 统一使用 WorkflowResult。
+type SemanticWorkflowOutput = WorkflowResult
 
 // semanticWorkflowState 是 Workflow 内部的局部状态。
 type semanticWorkflowState struct {
@@ -172,9 +170,9 @@ func BuildVideoSemanticRecommendWorkflow(
 		},
 	)
 
-	// query_videos: 调用 get_videos_by_dimensions 工具，直接返回最终结果
+	// query_videos: 调用 get_videos_by_dimensions 工具，返回结构化结果
 	queryVideosNode := compose.InvokableLambda(
-		func(ctx context.Context, _ string) (*SemanticWorkflowOutput, error) {
+		func(ctx context.Context, _ string) (*WorkflowResult, error) {
 			var expandedDims []*SemanticDim
 			var limit int
 			if readErr := compose.ProcessState[*semanticWorkflowState](ctx, func(_ context.Context, s *semanticWorkflowState) error {
@@ -182,39 +180,47 @@ func BuildVideoSemanticRecommendWorkflow(
 				limit = s.Limit
 				return nil
 			}); readErr != nil {
-				return &SemanticWorkflowOutput{Answer: "推荐处理失败，请稍后再试。"}, nil
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 			}
 
 			if len(expandedDims) == 0 {
-				return &SemanticWorkflowOutput{Answer: "未能匹配到符合条件的视频，请尝试其他描述。"}, nil
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "未能匹配到符合条件的视频，请尝试其他描述。"}, nil
 			}
 
 			rawResult, err := callGetVideosByDimensions(ctx, deps.Tools, expandedDims, limit)
 			if err != nil {
 				logx.Errorf("[semantic] query videos failed: %v", err)
-				return &SemanticWorkflowOutput{Answer: "推荐处理失败，请稍后再试。"}, nil
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 			}
-			return &SemanticWorkflowOutput{Answer: formatSemanticRecommendResult(rawResult)}, nil
+			result, err := buildSemanticWorkflowResult(rawResult, "为你推荐")
+			if err != nil {
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
+			}
+			return result, nil
 		},
 	)
 
 	// fallback_hot: 降级为热榜推荐（Workflow 内部节点）
 	fallbackHotNode := compose.InvokableLambda(
-		func(ctx context.Context, _ string) (*SemanticWorkflowOutput, error) {
+		func(ctx context.Context, _ string) (*WorkflowResult, error) {
 			var limit int
 			if readErr := compose.ProcessState[*semanticWorkflowState](ctx, func(_ context.Context, s *semanticWorkflowState) error {
 				limit = s.Limit
 				return nil
 			}); readErr != nil {
-				return &SemanticWorkflowOutput{Answer: "推荐处理失败，请稍后再试。"}, nil
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 			}
 
 			rawResult, err := CallGetHotVideos(ctx, deps.Tools, limit)
 			if err != nil {
 				logx.Errorf("[semantic] fallback hot failed: %v", err)
-				return &SemanticWorkflowOutput{Answer: "推荐处理失败，请稍后再试。"}, nil
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 			}
-			return &SemanticWorkflowOutput{Answer: FormatRecommendResult(rawResult)}, nil
+			result, err := buildSemanticWorkflowResult(rawResult, "热门推荐")
+			if err != nil {
+				return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
+			}
+			return result, nil
 		},
 	)
 
@@ -238,7 +244,7 @@ func BuildVideoSemanticRecommendWorkflow(
 	)
 
 	// ---------- 构建 Workflow ----------
-	wf := compose.NewWorkflow[*SemanticWorkflowInput, *SemanticWorkflowOutput](
+	wf := compose.NewWorkflow[*SemanticWorkflowInput, *WorkflowResult](
 		compose.WithGenLocalState(func(ctx context.Context) *semanticWorkflowState {
 			return &semanticWorkflowState{}
 		}),
@@ -274,11 +280,11 @@ func BuildVideoSemanticRecommendWorkflow(
 // ExecVideoSemanticRecommendWorkflow 保持向后兼容：
 // 构建 Workflow 并执行。如果外部传入的 Slots.Dims 为空，
 // 会走 LLM 提取维度；否则直接使用传入的 dims。
-func ExecVideoSemanticRecommendWorkflow(ctx context.Context, deps SemanticRecommendDeps, task *Task) (string, error) {
+func ExecVideoSemanticRecommendWorkflow(ctx context.Context, deps SemanticRecommendDeps, task *Task) (*WorkflowResult, error) {
 	wf, err := BuildVideoSemanticRecommendWorkflow(ctx, deps)
 	if err != nil {
 		logx.Errorf("[semantic] build workflow failed: %v", err)
-		return "推荐处理失败，请稍后再试。", nil
+		return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 	}
 
 	limit := task.Slots.Limit
@@ -296,9 +302,9 @@ func ExecVideoSemanticRecommendWorkflow(ctx context.Context, deps SemanticRecomm
 	out, err := wf.Invoke(ctx, input)
 	if err != nil {
 		logx.Errorf("[semantic] workflow invoke failed: %v", err)
-		return "推荐处理失败，请稍后再试。", nil
+		return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 	}
-	return out.Answer, nil
+	return out, nil
 }
 
 // expandDimsConcurrent 并发扩展每个维度的 tags：embed + Milvus 搜索。
@@ -501,14 +507,7 @@ func callGetVideosByDimensions(ctx context.Context, tools []tool.BaseTool, dims 
 
 func formatSemanticRecommendResult(raw string) string {
 	var rawResp struct {
-		Videos []struct {
-			Title      string   `json:"title"`
-			AuthorName string   `json:"author_name"`
-			LikeNum    int64    `json:"like_num"`
-			Duration   int      `json:"duration"`
-			Tags       []string `json:"tags"`
-		} `json:"videos"`
-		Total int64 `json:"total"`
+		Videos []VideoInfo `json:"videos"`
 	}
 	if err := json.Unmarshal([]byte(raw), &rawResp); err != nil {
 		return "推荐处理失败，请稍后再试。"
@@ -518,36 +517,30 @@ func formatSemanticRecommendResult(raw string) string {
 		return "未能匹配到符合条件的视频，请尝试其他描述。"
 	}
 
-	categories := []string{"为你精选", "个性化推荐", "为你推荐", "精选内容"}
-	category := categories[rand.Intn(len(categories))]
+	return formatRecommendResultInternal(rawResp.Videos)
+}
 
-	// 构建结构化 JSON 元数据（供 FillStructuredResponse 解析）
-	meta := struct {
+// buildSemanticWorkflowResult 从工具 JSON 响应构建 WorkflowResult。
+func buildSemanticWorkflowResult(raw string, category string) (*WorkflowResult, error) {
+	var rawResp struct {
 		Videos []VideoInfo `json:"videos"`
 		Total  int64       `json:"total"`
-	}{
-		Videos: make([]VideoInfo, len(rawResp.Videos)),
-		Total:  rawResp.Total,
 	}
-	for i, v := range rawResp.Videos {
-		meta.Videos[i] = VideoInfo{
-			Title:      v.Title,
-			AuthorName: v.AuthorName,
-			LikeCount:  v.LikeNum,
-			Duration:   v.Duration,
-			Tags:       v.Tags,
-		}
+	if err := json.Unmarshal([]byte(raw), &rawResp); err != nil {
+		return &WorkflowResult{ResultType: ResultTypeText, Text: "推荐处理失败，请稍后再试。"}, nil
 	}
-	metaJSON, _ := json.Marshal(meta)
 
+	if len(rawResp.Videos) == 0 {
+		return &WorkflowResult{ResultType: ResultTypeText, Text: "未能匹配到符合条件的视频，请尝试其他描述。"}, nil
+	}
+
+	// 构建友好的文本回复
 	var sb strings.Builder
-	sb.WriteString(string(metaJSON))
-	sb.WriteString("\n\n")
 	sb.WriteString(fmt.Sprintf("[%s]\n\n找到 %d 个匹配视频：\n\n", category, rawResp.Total))
 
 	for i, v := range rawResp.Videos {
 		sb.WriteString(fmt.Sprintf("%d. 《%s》\n", i+1, v.Title))
-		sb.WriteString(fmt.Sprintf("   %s | 👍 %s", v.AuthorName, formatCount(v.LikeNum)))
+		sb.WriteString(fmt.Sprintf("   %s | 👍 %s", v.AuthorName, formatCount(v.LikeCount)))
 		if len(v.Tags) > 0 {
 			sb.WriteString(fmt.Sprintf(" | tag: %s", strings.Join(v.Tags, ",")))
 		}
@@ -557,9 +550,14 @@ func formatSemanticRecommendResult(raw string) string {
 		}
 		sb.WriteString("\n")
 	}
-
 	sb.WriteString("输入序号查看详情，或告诉我其他需求。")
-	return sb.String()
+
+	return &WorkflowResult{
+		ResultType: ResultTypeVideoList,
+		Text:       sb.String(),
+		Videos:     VideoInfoToItems(rawResp.Videos),
+		Total:      rawResp.Total,
+	}, nil
 }
 
 func toFloat32(src []float64) []float32 {
